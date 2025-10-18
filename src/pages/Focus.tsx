@@ -1,22 +1,16 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Database } from "@/integrations/supabase/types";
 import { useNavigate } from "react-router-dom";
 import { BottomNav } from "@/components/BottomNav";
 import { TimerDisplay } from "@/components/focus/TimerDisplay";
 import { CategorySelector } from "@/components/focus/CategorySelector";
-import { TaskForm } from "@/components/focus/TaskForm";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
+import { CustomCategoryDialog } from "@/components/focus/CustomCategoryDialog";
+import { useTimer } from "@/contexts/TimerContext";
 
 export default function Focus() {
   const [user, setUser] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState("Study");
-  const [showTaskForm, setShowTaskForm] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { category, setCategory } = useTimer();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -40,27 +34,15 @@ export default function Focus() {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const handleSessionComplete = async (durationMinutes: number) => {
-    if (!user) return;
+  // Persist current category to localStorage for session completion
+  useEffect(() => {
+    localStorage.setItem("currentTimerCategory", category.toLowerCase());
+  }, [category]);
 
-    const { error } = await supabase.from("focus_sessions").insert([{
-      category: selectedCategory.toLowerCase() as Database["public"]["Enums"]["task_category"],
-      duration_minutes: durationMinutes,
-      user_id: user.id,
-    }]);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save focus session",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Great work!",
-        description: `${durationMinutes} minute focus session completed`,
-      });
-    }
+  const handleCategoryAdded = (newCategory: string) => {
+    // Dispatch custom event to refresh CategorySelector
+    window.dispatchEvent(new Event("customCategoryAdded"));
+    setCategory(newCategory);
   };
 
   if (!user) return null;
@@ -76,29 +58,15 @@ export default function Focus() {
         </div>
 
         <CategorySelector
-          selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
+          selectedCategory={category}
+          onSelectCategory={setCategory}
         />
 
-        <TimerDisplay
-          category={selectedCategory}
-          onSessionComplete={handleSessionComplete}
-        />
+        <TimerDisplay />
 
-        <Dialog open={showTaskForm} onOpenChange={setShowTaskForm}>
-          <DialogTrigger asChild>
-            <Button className="w-full mt-6" variant="outline">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Custom Task
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create Custom Task</DialogTitle>
-            </DialogHeader>
-            <TaskForm onSuccess={() => setShowTaskForm(false)} />
-          </DialogContent>
-        </Dialog>
+        <div className="mt-6">
+          <CustomCategoryDialog onCategoryAdded={handleCategoryAdded} />
+        </div>
       </div>
 
       <BottomNav />

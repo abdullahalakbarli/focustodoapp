@@ -1,59 +1,11 @@
-import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Play, Pause, RotateCcw } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { useTimer } from "@/contexts/TimerContext";
 
-interface TimerDisplayProps {
-  category: string;
-  onSessionComplete: (minutes: number) => void;
-}
-
-export const TimerDisplay = ({ category, onSessionComplete }: TimerDisplayProps) => {
-  const [minutes, setMinutes] = useState(25);
-  const [seconds, setSeconds] = useState(0);
-  const [isActive, setIsActive] = useState(false);
-  const [totalSeconds, setTotalSeconds] = useState(25 * 60);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    if (isActive && (minutes > 0 || seconds > 0)) {
-      intervalRef.current = setInterval(() => {
-        if (seconds === 0) {
-          if (minutes === 0) {
-            setIsActive(false);
-            onSessionComplete(25);
-          } else {
-            setMinutes(minutes - 1);
-            setSeconds(59);
-          }
-        } else {
-          setSeconds(seconds - 1);
-        }
-      }, 1000);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [isActive, minutes, seconds, onSessionComplete]);
-
-  const toggleTimer = () => {
-    setIsActive(!isActive);
-  };
-
-  const resetTimer = () => {
-    setIsActive(false);
-    setMinutes(25);
-    setSeconds(0);
-    setTotalSeconds(25 * 60);
-  };
+export const TimerDisplay = () => {
+  const { minutes, seconds, isActive, category, totalSeconds, toggleTimer, resetTimer } = useTimer();
 
   const currentSeconds = minutes * 60 + seconds;
   const progress = ((totalSeconds - currentSeconds) / totalSeconds) * 100;

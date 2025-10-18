@@ -1,7 +1,8 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-const categories = [
+const defaultCategories = [
   "Study",
   "Work",
   "Coding",
@@ -23,12 +24,39 @@ export const CategorySelector = ({
   selectedCategory,
   onSelectCategory,
 }: CategorySelectorProps) => {
+  const [allCategories, setAllCategories] = useState<string[]>(defaultCategories);
+
+  useEffect(() => {
+    const customCategories = JSON.parse(
+      localStorage.getItem("customCategories") || "[]"
+    );
+    setAllCategories([...defaultCategories, ...customCategories]);
+  }, []);
+
+  const refreshCategories = () => {
+    const customCategories = JSON.parse(
+      localStorage.getItem("customCategories") || "[]"
+    );
+    setAllCategories([...defaultCategories, ...customCategories]);
+  };
+
+  // Add event listener for custom category updates
+  useEffect(() => {
+    const handleStorageChange = () => {
+      refreshCategories();
+    };
+
+    window.addEventListener("customCategoryAdded", handleStorageChange);
+    return () => {
+      window.removeEventListener("customCategoryAdded", handleStorageChange);
+    };
+  }, []);
   return (
     <Card className="shadow-soft">
       <CardContent className="pt-6">
         <p className="text-sm font-medium mb-3">Select Category</p>
         <div className="grid grid-cols-2 gap-2">
-          {categories.map((category) => (
+          {allCategories.map((category) => (
             <button
               key={category}
               onClick={() => onSelectCategory(category)}

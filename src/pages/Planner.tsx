@@ -4,11 +4,17 @@ import { useNavigate } from "react-router-dom";
 import { BottomNav } from "@/components/BottomNav";
 import { Calendar } from "@/components/ui/calendar";
 import { TaskList } from "@/components/planner/TaskList";
+import { TaskForm } from "@/components/focus/TaskForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 export default function Planner() {
   const [user, setUser] = useState(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -33,12 +39,33 @@ export default function Planner() {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  const handleTaskCreated = () => {
+    setDialogOpen(false);
+    setRefreshKey(prev => prev + 1);
+  };
+
   if (!user) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 pb-20">
       <div className="container max-w-4xl mx-auto px-4 pt-8 space-y-6">
-        <h1 className="text-3xl font-bold">Task Planner</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Task Planner</h1>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Add Task
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Task</DialogTitle>
+              </DialogHeader>
+              <TaskForm onSuccess={handleTaskCreated} />
+            </DialogContent>
+          </Dialog>
+        </div>
 
         <Card className="shadow-soft">
           <CardHeader>
@@ -54,7 +81,7 @@ export default function Planner() {
           </CardContent>
         </Card>
 
-        <TaskList selectedDate={selectedDate} userId={user.id} />
+        <TaskList key={refreshKey} selectedDate={selectedDate} userId={user.id} />
       </div>
 
       <BottomNav />
