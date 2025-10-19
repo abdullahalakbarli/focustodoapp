@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { LogOut, Moon, Sun, Bell } from "lucide-react";
+import { LogOut, Moon, Sun, Bell, Edit } from "lucide-react";
 import { ProfileInfo } from "@/components/profile/ProfileInfo";
 
 export default function Profile() {
@@ -106,6 +106,15 @@ export default function Profile() {
         <h1 className="text-3xl font-bold">Profile</h1>
 
         <ProfileInfo profile={profile} user={user} />
+
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => navigate("/edit-profile")}
+        >
+          <Edit className="mr-2 h-4 w-4" />
+          Edit Profile
+        </Button>
 
         <Card className="shadow-soft">
           <CardHeader>

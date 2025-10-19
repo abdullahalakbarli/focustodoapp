@@ -6,11 +6,15 @@ import { TimerDisplay } from "@/components/focus/TimerDisplay";
 import { CategorySelector } from "@/components/focus/CategorySelector";
 import { CustomCategoryDialog } from "@/components/focus/CustomCategoryDialog";
 import { useTimer } from "@/contexts/TimerContext";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { PointsDisplay } from "@/components/gamification/PointsDisplay";
+import { AchievementsDialog } from "@/components/gamification/AchievementsDialog";
 
 export default function Focus() {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
-  const { category, setCategory } = useTimer();
+  const { category, setCategory, duration, setDuration, isActive } = useTimer();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -57,10 +61,40 @@ export default function Focus() {
           <p className="text-muted-foreground">Stay focused, be productive</p>
         </div>
 
-        <CategorySelector
-          selectedCategory={category}
-          onSelectCategory={setCategory}
-        />
+        <PointsDisplay />
+
+        <div className="flex justify-center mb-4">
+          <AchievementsDialog />
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1">
+              <CategorySelector
+                selectedCategory={category}
+                onSelectCategory={setCategory}
+              />
+            </div>
+            <div className="w-32">
+              <Label htmlFor="duration" className="text-sm text-muted-foreground">Duration</Label>
+              <Select
+                value={duration.toString()}
+                onValueChange={(value) => setDuration(parseInt(value))}
+                disabled={isActive}
+              >
+                <SelectTrigger id="duration" className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="15">15 min</SelectItem>
+                  <SelectItem value="25">25 min</SelectItem>
+                  <SelectItem value="45">45 min</SelectItem>
+                  <SelectItem value="60">60 min</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
 
         <TimerDisplay />
 

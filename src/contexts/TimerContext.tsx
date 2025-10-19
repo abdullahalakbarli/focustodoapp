@@ -6,9 +6,11 @@ interface TimerContextType {
   isActive: boolean;
   category: string;
   totalSeconds: number;
+  duration: number;
   toggleTimer: () => void;
   resetTimer: () => void;
   setCategory: (category: string) => void;
+  setDuration: (duration: number) => void;
   onSessionComplete: () => void;
 }
 
@@ -28,11 +30,15 @@ interface TimerProviderProps {
 }
 
 export const TimerProvider = ({ children, onComplete }: TimerProviderProps) => {
-  const [minutes, setMinutes] = useState(25);
+  const [duration, setDurationState] = useState(() => {
+    const saved = localStorage.getItem("focusDuration");
+    return saved ? parseInt(saved) : 25;
+  });
+  const [minutes, setMinutes] = useState(duration);
   const [seconds, setSeconds] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [category, setCategory] = useState("Study");
-  const [totalSeconds, setTotalSeconds] = useState(25 * 60);
+  const [totalSeconds, setTotalSeconds] = useState(duration * 60);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -72,13 +78,22 @@ export const TimerProvider = ({ children, onComplete }: TimerProviderProps) => {
 
   const resetTimer = () => {
     setIsActive(false);
-    setMinutes(25);
+    setMinutes(duration);
     setSeconds(0);
-    setTotalSeconds(25 * 60);
+    setTotalSeconds(duration * 60);
+  };
+
+  const setDuration = (newDuration: number) => {
+    setDurationState(newDuration);
+    localStorage.setItem("focusDuration", newDuration.toString());
+    setMinutes(newDuration);
+    setSeconds(0);
+    setTotalSeconds(newDuration * 60);
+    setIsActive(false);
   };
 
   const onSessionComplete = () => {
-    onComplete(25);
+    onComplete(duration);
   };
 
   return (
@@ -89,9 +104,11 @@ export const TimerProvider = ({ children, onComplete }: TimerProviderProps) => {
         isActive,
         category,
         totalSeconds,
+        duration,
         toggleTimer,
         resetTimer,
         setCategory,
+        setDuration,
         onSessionComplete,
       }}
     >
