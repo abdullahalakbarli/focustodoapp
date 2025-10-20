@@ -1,0 +1,2 @@
+ALTER TABLE public.tasks 
+ADD COLUMN color TEXT DEFAULT '#3b82f6';

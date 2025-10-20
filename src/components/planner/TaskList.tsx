@@ -14,6 +14,7 @@ interface Task {
   completed: boolean;
   scheduled_date: string | null;
   recurrence: string | null;
+  color: string;
 }
 
 interface TaskListProps {
@@ -88,7 +89,8 @@ export const TaskList = ({ selectedDate, userId }: TaskListProps) => {
             {tasks.map((task) => (
               <div
                 key={task.id}
-                className="flex items-start gap-3 p-3 rounded-lg bg-accent/50 hover:bg-accent transition-colors"
+                className="flex items-start gap-3 p-3 rounded-lg bg-accent/50 hover:bg-accent transition-colors border-l-4"
+                style={{ borderLeftColor: task.color }}
               >
                 <Checkbox
                   checked={task.completed}
@@ -96,10 +98,16 @@ export const TaskList = ({ selectedDate, userId }: TaskListProps) => {
                   className="mt-1"
                 />
                 <div className="flex-1 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <p className={task.completed ? "line-through text-muted-foreground" : ""}>
-                      {task.name}
-                    </p>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-3 h-3 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: task.color }}
+                      />
+                      <p className={task.completed ? "line-through text-muted-foreground" : ""}>
+                        {task.name}
+                      </p>
+                    </div>
                     <Badge variant="secondary" className="text-xs">
                       {task.duration_minutes}m
                     </Badge>

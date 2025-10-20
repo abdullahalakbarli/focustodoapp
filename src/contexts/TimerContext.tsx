@@ -34,12 +34,56 @@ export const TimerProvider = ({ children, onComplete }: TimerProviderProps) => {
     const saved = localStorage.getItem("focusDuration");
     return saved ? parseInt(saved) : 25;
   });
-  const [minutes, setMinutes] = useState(duration);
-  const [seconds, setSeconds] = useState(0);
-  const [isActive, setIsActive] = useState(false);
-  const [category, setCategory] = useState("Study");
-  const [totalSeconds, setTotalSeconds] = useState(duration * 60);
+  
+  // Load saved timer state once to initialize all values
+  const loadSavedState = () => {
+    const savedState = localStorage.getItem("timerState");
+    if (!savedState) return null;
+    
+    const parsed = JSON.parse(savedState);
+    const { minutes: savedMinutes, seconds: savedSeconds, isActive, lastSaved } = parsed;
+    
+    // If timer was active, calculate elapsed time
+    if (isActive && lastSaved) {
+      const elapsed = Math.floor((Date.now() - lastSaved) / 1000);
+      const totalSavedSeconds = savedMinutes * 60 + savedSeconds;
+      const newTotalSeconds = Math.max(0, totalSavedSeconds - elapsed);
+      const newMinutes = Math.floor(newTotalSeconds / 60);
+      const newSeconds = newTotalSeconds % 60;
+      
+      return {
+        ...parsed,
+        minutes: newMinutes,
+        seconds: newSeconds,
+        isActive: newMinutes > 0 || newSeconds > 0, // Only restore active if time remaining
+      };
+    }
+    
+    return parsed;
+  };
+  
+  const savedTimerState = loadSavedState();
+  
+  const [minutes, setMinutes] = useState(() => savedTimerState?.minutes ?? duration);
+  const [seconds, setSeconds] = useState(() => savedTimerState?.seconds ?? 0);
+  const [isActive, setIsActive] = useState(() => savedTimerState?.isActive ?? false);
+  const [category, setCategory] = useState(() => savedTimerState?.category ?? "Study");
+  const [totalSeconds, setTotalSeconds] = useState(() => savedTimerState?.totalSeconds ?? duration * 60);
+  
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Save timer state to localStorage whenever it changes
+  useEffect(() => {
+    const timerState = {
+      minutes,
+      seconds,
+      isActive,
+      category,
+      totalSeconds,
+      lastSaved: Date.now(),
+    };
+    localStorage.setItem("timerState", JSON.stringify(timerState));
+  }, [minutes, seconds, isActive, category, totalSeconds]);
 
   useEffect(() => {
     if (isActive && (minutes > 0 || seconds > 0)) {
@@ -49,7 +93,9 @@ export const TimerProvider = ({ children, onComplete }: TimerProviderProps) => {
             setMinutes((prevMinutes) => {
               if (prevMinutes === 0) {
                 setIsActive(false);
-                onComplete(25);
+                onComplete(duration);
+                // Clear saved state when timer completes
+                localStorage.removeItem("timerState");
                 return 0;
               }
               return prevMinutes - 1;
@@ -70,7 +116,7 @@ export const TimerProvider = ({ children, onComplete }: TimerProviderProps) => {
         clearInterval(intervalRef.current);
       }
     };
-  }, [isActive, onComplete]);
+  }, [isActive, onComplete, duration]);
 
   const toggleTimer = () => {
     setIsActive(!isActive);
@@ -81,6 +127,8 @@ export const TimerProvider = ({ children, onComplete }: TimerProviderProps) => {
     setMinutes(duration);
     setSeconds(0);
     setTotalSeconds(duration * 60);
+    // Clear saved state when manually resetting
+    localStorage.removeItem("timerState");
   };
 
   const setDuration = (newDuration: number) => {

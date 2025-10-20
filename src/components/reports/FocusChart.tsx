@@ -29,15 +29,25 @@ export const FocusChart = ({ period, userId }: FocusChartProps) => {
 
     const { data, error } = await supabase
       .from("focus_sessions")
-      .select("*")
+      .select(`
+        *,
+        tasks (
+          color
+        )
+      `)
       .eq("user_id", userId)
       .gte("created_at", startDate.toISOString());
 
     if (data) {
       const grouped = data.reduce((acc: any, session) => {
         const category = session.category;
+        const taskColor = session.tasks?.[0]?.color || "#3b82f6";
         if (!acc[category]) {
-          acc[category] = { name: category.charAt(0).toUpperCase() + category.slice(1), minutes: 0 };
+          acc[category] = { 
+            name: category.charAt(0).toUpperCase() + category.slice(1), 
+            minutes: 0,
+            color: taskColor
+          };
         }
         acc[category].minutes += session.duration_minutes;
         return acc;
@@ -65,7 +75,11 @@ export const FocusChart = ({ period, userId }: FocusChartProps) => {
                 borderRadius: "8px",
               }}
             />
-            <Bar dataKey="minutes" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+            <Bar dataKey="minutes" radius={[8, 8, 0, 0]}>
+              {chartData.map((entry, index) => (
+                <rect key={`cell-${index}`} fill={entry.color || "hsl(var(--primary))"} />
+              ))}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </CardContent>

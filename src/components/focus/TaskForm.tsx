@@ -29,12 +29,24 @@ const categories = [
   "other",
 ];
 
+const PRESET_COLORS = [
+  "#3b82f6", // blue
+  "#ef4444", // red
+  "#10b981", // green
+  "#f59e0b", // yellow
+  "#8b5cf6", // purple
+  "#ec4899", // pink
+  "#06b6d4", // cyan
+  "#f97316", // orange
+];
+
 export const TaskForm = ({ onSuccess }: TaskFormProps) => {
   const [name, setName] = useState("");
   const [category, setCategory] = useState("study");
   const [duration, setDuration] = useState(25);
   const [scheduledDate, setScheduledDate] = useState<Date>();
   const [recurrence, setRecurrence] = useState<string>();
+  const [color, setColor] = useState(PRESET_COLORS[0]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -60,6 +72,7 @@ export const TaskForm = ({ onSuccess }: TaskFormProps) => {
       duration_minutes: duration,
       scheduled_date: scheduledDate ? format(scheduledDate, "yyyy-MM-dd") : null,
       recurrence,
+      color,
       user_id: user.id,
     }]);
 
@@ -160,6 +173,25 @@ export const TaskForm = ({ onSuccess }: TaskFormProps) => {
             <SelectItem value="monthly">Monthly</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Task Color</Label>
+        <div className="flex gap-2 flex-wrap">
+          {PRESET_COLORS.map((presetColor) => (
+            <button
+              key={presetColor}
+              type="button"
+              onClick={() => setColor(presetColor)}
+              className={cn(
+                "w-10 h-10 rounded-md border-2 transition-all hover:scale-110",
+                color === presetColor ? "border-foreground scale-110" : "border-transparent"
+              )}
+              style={{ backgroundColor: presetColor }}
+              aria-label={`Select ${presetColor} color`}
+            />
+          ))}
+        </div>
       </div>
 
       <Button type="submit" className="w-full" disabled={loading}>
