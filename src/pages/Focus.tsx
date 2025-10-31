@@ -52,53 +52,72 @@ export default function Focus() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 pb-20">
-      <div className="container max-w-md mx-auto px-4 pt-8">
+    <div className="min-h-screen bg-gradient-to-br from-primary/8 via-background via-50% to-accent/8 pb-24 relative overflow-hidden">
+      {/* Decorative background elements */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -z-10" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl -z-10" />
+      
+      <div className="container max-w-md mx-auto px-4 pt-8 animate-fade-in">
+        {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
+          <div className="inline-flex items-center justify-center mb-3">
+            <div className="h-12 w-12 rounded-2xl bg-gradient-primary shadow-soft-md flex items-center justify-center animate-pulse-glow">
+              <span className="text-2xl">🎯</span>
+            </div>
+          </div>
+          <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2 tracking-tight">
             FocusMind
           </h1>
-          <p className="text-muted-foreground">Stay focused, be productive</p>
+          <p className="text-muted-foreground text-sm font-medium">Stay focused, be productive</p>
         </div>
 
-        <PointsDisplay />
+        {/* Points Display */}
+        <div className="mb-6">
+          <PointsDisplay />
+        </div>
 
-        <div className="flex justify-center mb-4">
+        {/* Achievements */}
+        <div className="flex justify-center mb-6">
           <AchievementsDialog />
         </div>
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1">
+        {/* Category & Duration Selection */}
+        <div className="space-y-4 mb-6">
+          <div className="flex flex-col gap-4">
+            <div className="w-full">
               <CategorySelector
                 selectedCategory={category}
                 onSelectCategory={setCategory}
               />
             </div>
-            <div className="w-32">
-              <Label htmlFor="duration" className="text-sm text-muted-foreground">Duration</Label>
+            <div className="w-full">
+              <Label htmlFor="duration" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 block">
+                Duration
+              </Label>
               <Select
                 value={duration.toString()}
                 onValueChange={(value) => setDuration(parseInt(value))}
                 disabled={isActive}
               >
-                <SelectTrigger id="duration" className="mt-1">
+                <SelectTrigger id="duration" className="h-12 rounded-xl border-2 glass shadow-soft hover-lift transition-smooth">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="15">15 min</SelectItem>
-                  <SelectItem value="25">25 min</SelectItem>
-                  <SelectItem value="45">45 min</SelectItem>
-                  <SelectItem value="60">60 min</SelectItem>
+                <SelectContent className="rounded-xl border-2">
+                  <SelectItem value="15" className="rounded-lg">15 min</SelectItem>
+                  <SelectItem value="25" className="rounded-lg">25 min</SelectItem>
+                  <SelectItem value="45" className="rounded-lg">45 min</SelectItem>
+                  <SelectItem value="60" className="rounded-lg">60 min</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
         </div>
 
+        {/* Timer Display */}
         <TimerDisplay />
 
-        <div className="mt-6">
+        {/* Custom Category */}
+        <div className="mt-8 mb-6">
           <CustomCategoryDialog onCategoryAdded={handleCategoryAdded} />
         </div>
       </div>

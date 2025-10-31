@@ -52,19 +52,19 @@ export const CategorySelector = ({
     };
   }, []);
   return (
-    <Card className="shadow-soft">
+    <Card className="shadow-soft-md glass border-primary/10 animate-scale-in">
       <CardContent className="pt-6">
-        <p className="text-sm font-medium mb-3">Select Category</p>
-        <div className="grid grid-cols-2 gap-2">
+        <p className="text-sm font-semibold mb-4 text-foreground/80">Select Category</p>
+        <div className="grid grid-cols-2 gap-2.5">
           {allCategories.map((category) => (
             <button
               key={category}
               onClick={() => onSelectCategory(category)}
               className={cn(
-                "px-4 py-3 rounded-lg text-sm font-medium transition-all",
+                "px-4 py-3.5 rounded-xl text-sm font-medium transition-smooth active-press hover-lift",
                 selectedCategory === category
-                  ? "bg-primary text-primary-foreground shadow-md"
-                  : "bg-accent hover:bg-accent/80 text-accent-foreground"
+                  ? "bg-primary text-primary-foreground shadow-soft-md hover-glow scale-105"
+                  : "bg-accent/50 hover:bg-accent text-accent-foreground border border-border/50"
               )}
             >
               {category}

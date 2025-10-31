@@ -13,6 +13,7 @@ import Planner from "./pages/Planner";
 import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
 import Auth from "./pages/Auth";
+import Leaderboard from "./pages/Leaderboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -85,6 +86,7 @@ const App = () => {
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Focus />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/planner" element={<Planner />} />
               <Route path="/profile" element={<Profile />} />

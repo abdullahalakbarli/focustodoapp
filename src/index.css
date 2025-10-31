@@ -8,101 +8,115 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Soft pastel color palette for productivity */
-    --background: 240 20% 98%;
-    --foreground: 240 10% 20%;
+    /* Modern teal/green calming palette for focus */
+    --background: 180 30% 98%;
+    --foreground: 180 15% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 20%;
+    --card-foreground: 180 15% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 20%;
+    --popover-foreground: 180 15% 15%;
 
-    /* Primary: Soft purple for focus and calm */
-    --primary: 260 60% 65%;
+    /* Primary: Calming teal for focus */
+    --primary: 175 60% 50%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 260 60% 55%;
+    --primary-hover: 175 65% 45%;
+    --primary-glow: 175 80% 60%;
 
-    /* Secondary: Soft blue for trust */
-    --secondary: 210 50% 90%;
-    --secondary-foreground: 210 60% 30%;
+    /* Secondary: Soft mint green */
+    --secondary: 160 45% 85%;
+    --secondary-foreground: 160 60% 25%;
 
-    /* Muted: Subtle gray tones */
-    --muted: 240 20% 95%;
-    --muted-foreground: 240 10% 50%;
+    /* Muted: Subtle neutral tones */
+    --muted: 180 20% 94%;
+    --muted-foreground: 180 10% 45%;
 
-    /* Accent: Energetic coral/pink */
-    --accent: 340 70% 75%;
-    --accent-foreground: 340 70% 30%;
+    /* Accent: Fresh green for highlights */
+    --accent: 150 55% 88%;
+    --accent-foreground: 150 70% 25%;
 
-    /* Success: Soft green for completed tasks */
-    --success: 150 50% 60%;
+    /* Success: Vibrant green */
+    --success: 145 60% 50%;
     --success-foreground: 0 0% 100%;
 
-    /* Warning: Soft amber */
-    --warning: 40 80% 65%;
-    --warning-foreground: 40 80% 20%;
-
-    --destructive: 0 70% 60%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 240 20% 88%;
-    --input: 240 20% 88%;
-    --ring: 260 60% 65%;
-
-    --radius: 1rem;
-
-    /* Gradients for visual interest */
-    --gradient-primary: linear-gradient(135deg, hsl(260 60% 65%), hsl(280 60% 70%));
-    --gradient-accent: linear-gradient(135deg, hsl(340 70% 75%), hsl(320 70% 70%));
-    --gradient-success: linear-gradient(135deg, hsl(150 50% 60%), hsl(170 50% 65%));
-
-    /* Shadows for depth */
-    --shadow-sm: 0 2px 8px hsl(240 20% 80% / 0.1);
-    --shadow-md: 0 4px 16px hsl(240 20% 70% / 0.15);
-    --shadow-lg: 0 8px 24px hsl(240 20% 60% / 0.2);
-
-    /* Timer specific colors */
-    --timer-active: 260 60% 65%;
-    --timer-paused: 40 80% 65%;
-    --timer-complete: 150 50% 60%;
-  }
-
-  .dark {
-    --background: 240 20% 10%;
-    --foreground: 240 10% 90%;
-
-    --card: 240 20% 15%;
-    --card-foreground: 240 10% 90%;
-
-    --popover: 240 20% 15%;
-    --popover-foreground: 240 10% 90%;
-
-    --primary: 260 60% 70%;
-    --primary-foreground: 0 0% 10%;
-    --primary-hover: 260 60% 60%;
-
-    --secondary: 210 40% 25%;
-    --secondary-foreground: 210 40% 85%;
-
-    --muted: 240 20% 20%;
-    --muted-foreground: 240 10% 60%;
-
-    --accent: 340 70% 60%;
-    --accent-foreground: 0 0% 10%;
-
-    --success: 150 50% 50%;
-    --success-foreground: 0 0% 10%;
-
-    --warning: 40 80% 55%;
-    --warning-foreground: 0 0% 10%;
+    /* Warning: Warm amber */
+    --warning: 40 90% 60%;
+    --warning-foreground: 40 90% 15%;
 
     --destructive: 0 70% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 20% 25%;
-    --input: 240 20% 25%;
-    --ring: 260 60% 70%;
+    --border: 180 20% 90%;
+    --input: 180 20% 90%;
+    --ring: 175 60% 50%;
+
+    --radius: 1.25rem;
+
+    /* Beautiful gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(175 60% 50%), hsl(160 65% 55%));
+    --gradient-accent: linear-gradient(135deg, hsl(150 55% 60%), hsl(165 60% 65%));
+    --gradient-success: linear-gradient(135deg, hsl(145 60% 50%), hsl(160 60% 55%));
+    --gradient-glow: linear-gradient(135deg, hsl(175 80% 60% / 0.2), hsl(160 75% 65% / 0.2));
+    
+    /* Glassmorphism effects */
+    --glass-bg: 0 0% 100% / 0.7;
+    --glass-border: 0 0% 100% / 0.2;
+    --glass-shadow: 0 8px 32px hsl(175 60% 50% / 0.1);
+
+    /* Enhanced shadows with color */
+    --shadow-sm: 0 2px 8px hsl(175 40% 70% / 0.08);
+    --shadow-md: 0 4px 16px hsl(175 40% 60% / 0.12);
+    --shadow-lg: 0 8px 32px hsl(175 40% 50% / 0.16);
+    --shadow-glow: 0 0 40px hsl(175 80% 60% / 0.3);
+
+    /* Timer state colors */
+    --timer-active: 175 60% 50%;
+    --timer-paused: 40 90% 60%;
+    --timer-complete: 145 60% 50%;
+  }
+
+  .dark {
+    --background: 180 25% 8%;
+    --foreground: 180 15% 92%;
+
+    --card: 180 20% 12%;
+    --card-foreground: 180 15% 92%;
+
+    --popover: 180 20% 12%;
+    --popover-foreground: 180 15% 92%;
+
+    --primary: 175 65% 55%;
+    --primary-foreground: 180 25% 8%;
+    --primary-hover: 175 70% 50%;
+    --primary-glow: 175 85% 65%;
+
+    --secondary: 160 30% 20%;
+    --secondary-foreground: 160 40% 85%;
+
+    --muted: 180 15% 18%;
+    --muted-foreground: 180 10% 60%;
+
+    --accent: 150 40% 22%;
+    --accent-foreground: 150 60% 85%;
+
+    --success: 145 60% 55%;
+    --success-foreground: 180 25% 8%;
+
+    --warning: 40 85% 60%;
+    --warning-foreground: 180 25% 8%;
+
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 180 15% 22%;
+    --input: 180 15% 22%;
+    --ring: 175 65% 55%;
+
+    /* Dark mode glassmorphism */
+    --glass-bg: 180 20% 12% / 0.7;
+    --glass-border: 0 0% 100% / 0.1;
+    --glass-shadow: 0 8px 32px hsl(0 0% 0% / 0.4);
   }
 }
 
@@ -132,6 +146,10 @@ All colors MUST be HSL.
     box-shadow: var(--shadow-lg);
   }
 
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
   .gradient-primary {
     background: var(--gradient-primary);
   }
@@ -142,5 +160,54 @@ All colors MUST be HSL.
 
   .gradient-success {
     background: var(--gradient-success);
+  }
+
+  .gradient-glow {
+    background: var(--gradient-glow);
+  }
+
+  /* Glassmorphism effect */
+  .glass {
+    background: hsl(var(--glass-bg));
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--glass-border));
+    box-shadow: var(--glass-shadow);
+  }
+
+  .glass-strong {
+    background: hsl(var(--glass-bg));
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid hsl(var(--glass-border));
+    box-shadow: var(--glass-shadow);
+  }
+
+  /* Smooth transitions */
+  .transition-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .transition-bounce {
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  /* Interactive effects */
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .hover-glow:hover {
+    box-shadow: var(--shadow-glow);
+  }
+
+  /* Press effect */
+  .active-press:active {
+    transform: scale(0.97);
   }
 }
