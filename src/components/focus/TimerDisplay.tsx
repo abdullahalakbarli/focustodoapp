@@ -6,10 +6,20 @@ import { useTimer } from "@/contexts/TimerContext";
 import { cn } from "@/lib/utils";
 
 export const TimerDisplay = () => {
-  const { minutes, seconds, isActive, category, totalSeconds, toggleTimer, resetTimer } = useTimer();
+  const {
+    minutes,
+    seconds,
+    isActive,
+    category,
+    sessionTotalSeconds,
+    remainingSeconds,
+    toggleTimer,
+    resetTimer,
+  } = useTimer();
 
-  const currentSeconds = minutes * 60 + seconds;
-  const progress = ((totalSeconds - currentSeconds) / totalSeconds) * 100;
+  const total = sessionTotalSeconds || 1;
+  const currentSeconds = remainingSeconds;
+  const progress = ((total - currentSeconds) / total) * 100;
   const circumference = 2 * Math.PI * 120; // radius = 120
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 

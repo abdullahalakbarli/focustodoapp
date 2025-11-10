@@ -1,11 +1,15 @@
-import { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useRef, ReactNode, useCallback } from "react";
 
 interface TimerContextType {
   minutes: number;
   seconds: number;
   isActive: boolean;
   category: string;
-  totalSeconds: number;
+  sessionTotalSeconds: number;
+  remainingSeconds: number;
+  elapsedSeconds: number;
+  inProgressSeconds: number;
+  inProgressMinutes: number;
   duration: number;
   toggleTimer: () => void;
   resetTimer: () => void;
@@ -26,122 +30,322 @@ export const useTimer = () => {
 
 interface TimerProviderProps {
   children: ReactNode;
-  onComplete: (minutes: number) => void;
+  onComplete: (payload: { durationMinutes: number; awardedIntervals: number }) => void;
+  onProgress?: (intervalIncrements: number) => void;
+  onSegment?: (payload: { category: string; minutes: number }) => void;
 }
 
-export const TimerProvider = ({ children, onComplete }: TimerProviderProps) => {
+type PersistedTimerState = {
+  remainingSeconds: number;
+  sessionTotalSeconds: number;
+  isActive: boolean;
+  category: string;
+  awardedIntervals: number;
+  inProgressSeconds: number;
+  categoryAccumulatedSeconds: number;
+  flushedMinutes: number;
+  duration: number;
+  lastSaved: number;
+};
+
+const TIMER_STORAGE_KEY = "timerState";
+
+const nowSeconds = () => Math.floor(Date.now() / 1000);
+
+const loadSavedState = (): PersistedTimerState | null => {
+  try {
+    const saved = localStorage.getItem(TIMER_STORAGE_KEY);
+    if (!saved) return null;
+    const parsed = JSON.parse(saved) as PersistedTimerState;
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+export const TimerProvider = ({ children, onComplete, onProgress, onSegment }: TimerProviderProps) => {
   const [duration, setDurationState] = useState(() => {
     const saved = localStorage.getItem("focusDuration");
     return saved ? parseInt(saved) : 25;
   });
-  
-  // Load saved timer state once to initialize all values
-  const loadSavedState = () => {
-    const savedState = localStorage.getItem("timerState");
-    if (!savedState) return null;
-    
-    const parsed = JSON.parse(savedState);
-    const { minutes: savedMinutes, seconds: savedSeconds, isActive, lastSaved } = parsed;
-    
-    // If timer was active, calculate elapsed time
-    if (isActive && lastSaved) {
-      const elapsed = Math.floor((Date.now() - lastSaved) / 1000);
-      const totalSavedSeconds = savedMinutes * 60 + savedSeconds;
-      const newTotalSeconds = Math.max(0, totalSavedSeconds - elapsed);
-      const newMinutes = Math.floor(newTotalSeconds / 60);
-      const newSeconds = newTotalSeconds % 60;
-      
-      return {
-        ...parsed,
-        minutes: newMinutes,
-        seconds: newSeconds,
-        isActive: newMinutes > 0 || newSeconds > 0, // Only restore active if time remaining
-      };
-    }
-    
-    return parsed;
-  };
-  
+
   const savedTimerState = loadSavedState();
-  
-  const [minutes, setMinutes] = useState(() => savedTimerState?.minutes ?? duration);
-  const [seconds, setSeconds] = useState(() => savedTimerState?.seconds ?? 0);
-  const [isActive, setIsActive] = useState(() => savedTimerState?.isActive ?? false);
-  const [category, setCategory] = useState(() => savedTimerState?.category ?? "Study");
-  const [totalSeconds, setTotalSeconds] = useState(() => savedTimerState?.totalSeconds ?? duration * 60);
-  
+
+  const sessionTotalInitial = savedTimerState?.sessionTotalSeconds ?? duration * 60;
+  const lastSaved = savedTimerState?.lastSaved ?? nowSeconds();
+  const savedRemaining = savedTimerState?.remainingSeconds ?? sessionTotalInitial;
+  const wasActive = savedTimerState?.isActive ?? false;
+
+  const elapsedSinceSave = wasActive ? Math.max(0, nowSeconds() - lastSaved) : 0;
+  const calculatedRemaining = Math.max(savedRemaining - elapsedSinceSave, 0);
+
+  const [sessionTotalSeconds, setSessionTotalSeconds] = useState(sessionTotalInitial);
+  const [remainingSeconds, setRemainingSeconds] = useState(calculatedRemaining);
+  const [isActive, setIsActive] = useState(() => wasActive && calculatedRemaining > 0);
+  const [categoryState, setCategoryState] = useState(() => savedTimerState?.category ?? "Study");
+  const [awardedIntervals, setAwardedIntervals] = useState(() => savedTimerState?.awardedIntervals ?? 0);
+  const [inProgressSeconds, setInProgressSeconds] = useState(() => {
+    const persisted = savedTimerState?.inProgressSeconds ?? 0;
+    const derived = sessionTotalInitial - calculatedRemaining;
+    return Math.max(persisted, derived);
+  });
+  const [categoryAccumulatedSeconds, setCategoryAccumulatedSeconds] = useState(
+    () => savedTimerState?.categoryAccumulatedSeconds ?? 0
+  );
+  const [flushedMinutes, setFlushedMinutes] = useState(() => savedTimerState?.flushedMinutes ?? 0);
+
+  const minutes = Math.floor(remainingSeconds / 60);
+  const seconds = remainingSeconds % 60;
+  const elapsedSeconds = Math.max(0, sessionTotalSeconds - remainingSeconds);
+  const inProgressMinutes = Math.floor(inProgressSeconds / 60);
+
+  const category = categoryState;
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const latestOnComplete = useRef(onComplete);
+  const latestOnProgress = useRef(onProgress);
+  const latestOnSegment = useRef(onSegment);
+  const categoryRef = useRef(categoryState);
 
-  // Save timer state to localStorage whenever it changes
   useEffect(() => {
-    const timerState = {
-      minutes,
-      seconds,
+    latestOnComplete.current = onComplete;
+  }, [onComplete]);
+
+  useEffect(() => {
+    latestOnProgress.current = onProgress;
+  }, [onProgress]);
+
+  useEffect(() => {
+    latestOnSegment.current = onSegment;
+  }, [onSegment]);
+
+  useEffect(() => {
+    categoryRef.current = categoryState;
+  }, [categoryState]);
+
+  const persistState = useCallback(
+    (stateOverrides?: Partial<PersistedTimerState>) => {
+      const state: PersistedTimerState = {
+        remainingSeconds,
+        sessionTotalSeconds,
+        isActive,
+        category: categoryState,
+        awardedIntervals,
+        inProgressSeconds,
+        categoryAccumulatedSeconds,
+        flushedMinutes,
+        duration,
+        lastSaved: nowSeconds(),
+        ...stateOverrides,
+      };
+      try {
+        localStorage.setItem(TIMER_STORAGE_KEY, JSON.stringify(state));
+      } catch {
+        // ignore persistence failures
+      }
+    },
+    [
+      awardedIntervals,
+      categoryState,
+      categoryAccumulatedSeconds,
+      duration,
+      flushedMinutes,
+      inProgressSeconds,
       isActive,
-      category,
-      totalSeconds,
-      lastSaved: Date.now(),
-    };
-    localStorage.setItem("timerState", JSON.stringify(timerState));
-  }, [minutes, seconds, isActive, category, totalSeconds]);
+      remainingSeconds,
+      sessionTotalSeconds,
+    ]
+  );
 
   useEffect(() => {
-    if (isActive && (minutes > 0 || seconds > 0)) {
+    persistState();
+  }, [persistState]);
+
+  const flushCategory = useCallback(
+    (categoryName: string, includeRemainder: boolean) => {
+      setCategoryAccumulatedSeconds((currentSeconds) => {
+        if (currentSeconds <= 0) {
+          return currentSeconds;
+        }
+
+        const secondsToUse = includeRemainder ? currentSeconds : currentSeconds - (currentSeconds % 60);
+        if (secondsToUse <= 0) {
+          return currentSeconds;
+        }
+
+        const minutesValue = includeRemainder
+          ? Math.round((secondsToUse / 60) * 100) / 100
+          : secondsToUse / 60;
+
+        if (latestOnSegment.current && minutesValue > 0) {
+          latestOnSegment.current({
+            category: categoryName,
+            minutes: minutesValue,
+          });
+          setFlushedMinutes((prev) => prev + minutesValue);
+        }
+
+        const remainder = includeRemainder ? 0 : currentSeconds - secondsToUse;
+        return remainder;
+      });
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    if (isActive && remainingSeconds > 0) {
       intervalRef.current = setInterval(() => {
-        setSeconds((prevSeconds) => {
-          if (prevSeconds === 0) {
-            setMinutes((prevMinutes) => {
-              if (prevMinutes === 0) {
-                setIsActive(false);
-                onComplete(duration);
-                // Clear saved state when timer completes
-                localStorage.removeItem("timerState");
-                return 0;
+        setCategoryAccumulatedSeconds((prev) => prev + 1);
+        setRemainingSeconds((prev) => {
+          if (prev <= 1) {
+            setIsActive(false);
+            setInProgressSeconds(sessionTotalSeconds);
+            flushCategory(categoryRef.current, true);
+            setAwardedIntervals((prevIntervals) => {
+              const totalIntervals = Math.floor(sessionTotalSeconds / 600);
+              if (totalIntervals > prevIntervals && latestOnProgress.current) {
+                latestOnProgress.current(totalIntervals - prevIntervals);
               }
-              return prevMinutes - 1;
+              return totalIntervals;
             });
-            return 59;
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new Event("timer:complete"));
+            }
+            persistState({
+              remainingSeconds: 0,
+              inProgressSeconds: sessionTotalSeconds,
+              isActive: false,
+              lastSaved: nowSeconds(),
+            });
+            latestOnComplete.current({
+              durationMinutes: sessionTotalSeconds / 60,
+              awardedIntervals,
+            });
+            localStorage.removeItem(TIMER_STORAGE_KEY);
+            return 0;
           }
-          return prevSeconds - 1;
+
+          const nextRemaining = prev - 1;
+          setInProgressSeconds((prevProgress) =>
+            Math.max(prevProgress, sessionTotalSeconds - nextRemaining)
+          );
+
+          const elapsed = sessionTotalSeconds - nextRemaining;
+          if (elapsed > 0 && elapsed % 600 === 0) {
+            setAwardedIntervals((prevIntervals) => {
+              const target = elapsed / 600;
+              if (target > prevIntervals && latestOnProgress.current) {
+                latestOnProgress.current(target - prevIntervals);
+              }
+              return target;
+            });
+          }
+
+          if (elapsed > 0 && elapsed % 60 === 0 && typeof window !== "undefined") {
+            window.dispatchEvent(new Event("timer:minute"));
+          }
+
+          return nextRemaining;
         });
       }, 1000);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
     }
 
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
-  }, [isActive, onComplete, duration]);
+  }, [awardedIntervals, duration, isActive, persistState, sessionTotalSeconds]);
 
   const toggleTimer = () => {
-    setIsActive(!isActive);
+    setIsActive((prev) => {
+      const wasActive = prev;
+      if (wasActive) {
+        flushCategory(categoryRef.current, false);
+      }
+      const next = !prev && remainingSeconds > 0;
+      persistState({ isActive: next, lastSaved: nowSeconds() });
+      return next;
+    });
+  };
+
+  const changeCategory = (nextCategory: string) => {
+    if (nextCategory === categoryRef.current) return;
+    flushCategory(categoryRef.current, false);
+    setCategoryState(nextCategory);
+    persistState({ category: nextCategory, lastSaved: nowSeconds() });
   };
 
   const resetTimer = () => {
+    flushCategory(categoryRef.current, true);
+    const startingSeconds = duration * 60;
     setIsActive(false);
-    setMinutes(duration);
-    setSeconds(0);
-    setTotalSeconds(duration * 60);
-    // Clear saved state when manually resetting
-    localStorage.removeItem("timerState");
+    setSessionTotalSeconds(startingSeconds);
+    setRemainingSeconds(startingSeconds);
+    setAwardedIntervals(0);
+    setInProgressSeconds(0);
+    setCategoryAccumulatedSeconds(0);
+    setFlushedMinutes(0);
+    persistState({
+      isActive: false,
+      remainingSeconds: startingSeconds,
+      sessionTotalSeconds: startingSeconds,
+      awardedIntervals: 0,
+      inProgressSeconds: 0,
+      categoryAccumulatedSeconds: 0,
+      flushedMinutes: 0,
+      lastSaved: nowSeconds(),
+    });
   };
 
   const setDuration = (newDuration: number) => {
+    flushCategory(categoryRef.current, true);
     setDurationState(newDuration);
     localStorage.setItem("focusDuration", newDuration.toString());
-    setMinutes(newDuration);
-    setSeconds(0);
-    setTotalSeconds(newDuration * 60);
+    const startingSeconds = newDuration * 60;
     setIsActive(false);
+    setSessionTotalSeconds(startingSeconds);
+    setRemainingSeconds(startingSeconds);
+    setAwardedIntervals(0);
+    setInProgressSeconds(0);
+    setCategoryAccumulatedSeconds(0);
+    setFlushedMinutes(0);
+    persistState({
+      duration: newDuration,
+      isActive: false,
+      remainingSeconds: startingSeconds,
+      sessionTotalSeconds: startingSeconds,
+      awardedIntervals: 0,
+      inProgressSeconds: 0,
+      categoryAccumulatedSeconds: 0,
+      flushedMinutes: 0,
+      lastSaved: nowSeconds(),
+    });
   };
 
   const onSessionComplete = () => {
-    onComplete(duration);
+    flushCategory(categoryRef.current, true);
+    latestOnComplete.current({
+      durationMinutes: sessionTotalSeconds / 60,
+      awardedIntervals,
+    });
+    setAwardedIntervals(0);
+    setInProgressSeconds(0);
+    setCategoryAccumulatedSeconds(0);
+    setFlushedMinutes(0);
+    persistState({
+      awardedIntervals: 0,
+      inProgressSeconds: 0,
+      categoryAccumulatedSeconds: 0,
+      flushedMinutes: 0,
+      isActive: false,
+      remainingSeconds: 0,
+    });
   };
 
   return (
@@ -151,11 +355,15 @@ export const TimerProvider = ({ children, onComplete }: TimerProviderProps) => {
         seconds,
         isActive,
         category,
-        totalSeconds,
+        sessionTotalSeconds,
+        remainingSeconds,
+        elapsedSeconds,
+        inProgressSeconds,
+        inProgressMinutes,
         duration,
         toggleTimer,
         resetTimer,
-        setCategory,
+        setCategory: changeCategory,
         setDuration,
         onSessionComplete,
       }}

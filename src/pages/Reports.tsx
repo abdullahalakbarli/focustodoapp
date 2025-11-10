@@ -7,10 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatsCards } from "@/components/reports/StatsCards";
 import { FocusChart } from "@/components/reports/FocusChart";
 import { ExportButtons } from "@/components/reports/ExportButtons";
+import { useTimer } from "@/contexts/TimerContext";
 
 export default function Reports() {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
+  const { inProgressMinutes, category } = useTimer();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -54,19 +56,34 @@ export default function Reports() {
 
           <TabsContent value="daily" className="space-y-6">
             <ExportButtons userId={user.id} period="daily" />
-            <StatsCards period="daily" userId={user.id} />
+            <StatsCards
+              period="daily"
+              userId={user.id}
+              extraMinutes={inProgressMinutes}
+              currentCategoryHint={category}
+            />
             <FocusChart period="daily" userId={user.id} />
           </TabsContent>
 
           <TabsContent value="weekly" className="space-y-6">
             <ExportButtons userId={user.id} period="weekly" />
-            <StatsCards period="weekly" userId={user.id} />
+            <StatsCards
+              period="weekly"
+              userId={user.id}
+              extraMinutes={inProgressMinutes}
+              currentCategoryHint={category}
+            />
             <FocusChart period="weekly" userId={user.id} />
           </TabsContent>
 
           <TabsContent value="monthly" className="space-y-6">
             <ExportButtons userId={user.id} period="monthly" />
-            <StatsCards period="monthly" userId={user.id} />
+            <StatsCards
+              period="monthly"
+              userId={user.id}
+              extraMinutes={inProgressMinutes}
+              currentCategoryHint={category}
+            />
             <FocusChart period="monthly" userId={user.id} />
           </TabsContent>
         </Tabs>

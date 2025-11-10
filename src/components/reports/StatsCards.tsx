@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, Target, TrendingUp } from "lucide-react";
@@ -6,20 +6,18 @@ import { Clock, Target, TrendingUp } from "lucide-react";
 interface StatsCardsProps {
   period: "daily" | "weekly" | "monthly";
   userId: string;
+  extraMinutes?: number;
+  currentCategoryHint?: string;
 }
 
-export const StatsCards = ({ period, userId }: StatsCardsProps) => {
+export const StatsCards = ({ period, userId, extraMinutes = 0, currentCategoryHint }: StatsCardsProps) => {
   const [stats, setStats] = useState({
     totalMinutes: 0,
     sessions: 0,
     topCategory: "N/A",
   });
 
-  useEffect(() => {
-    fetchStats();
-  }, [period, userId]);
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     const now = new Date();
     let startDate = new Date();
 
@@ -57,7 +55,26 @@ export const StatsCards = ({ period, userId }: StatsCardsProps) => {
         topCategory: topCategory.charAt(0).toUpperCase() + topCategory.slice(1),
       });
     }
-  };
+  }, [period, userId]);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  useEffect(() => {
+    const handleMinute = () => {
+      fetchStats();
+    };
+    const handleComplete = () => {
+      fetchStats();
+    };
+    window.addEventListener("timer:minute", handleMinute);
+    window.addEventListener("timer:complete", handleComplete);
+    return () => {
+      window.removeEventListener("timer:minute", handleMinute);
+      window.removeEventListener("timer:complete", handleComplete);
+    };
+  }, [fetchStats]);
 
   return (
     <div className="grid gap-4 md:grid-cols-3">
@@ -67,9 +84,9 @@ export const StatsCards = ({ period, userId }: StatsCardsProps) => {
           <Clock className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats.totalMinutes} min</div>
+          <div className="text-2xl font-bold">{stats.totalMinutes + extraMinutes} min</div>
           <p className="text-xs text-muted-foreground">
-            {Math.round(stats.totalMinutes / 60)} hours
+            {Math.round((stats.totalMinutes + extraMinutes) / 60)} hours
           </p>
         </CardContent>
       </Card>
@@ -91,7 +108,11 @@ export const StatsCards = ({ period, userId }: StatsCardsProps) => {
           <TrendingUp className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats.topCategory}</div>
+          <div className="text-2xl font-bold">
+            {stats.topCategory !== "N/A"
+              ? stats.topCategory
+              : (currentCategoryHint ? currentCategoryHint.charAt(0).toUpperCase() + currentCategoryHint.slice(1) : "N/A")}
+          </div>
           <p className="text-xs text-muted-foreground">Most focused on</p>
         </CardContent>
       </Card>

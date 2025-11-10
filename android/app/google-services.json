@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "783858303125",
+    "project_id": "focus-to-do-fc5ec",
+    "storage_bucket": "focus-to-do-fc5ec.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:783858303125:android:8538787ececa0c5ca61b9c",
+        "android_client_info": {
+          "package_name": "com.abdullah.focustodo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDSiN8SnnFw5Y0KvfYY_vA_L9cscKZrUb8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

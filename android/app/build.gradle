@@ -1,8 +1,26 @@
 apply plugin: 'com.android.application'
 
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.withInputStream { stream ->
+        keystoreProperties.load(stream)
+    }
+}
+
 android {
     namespace "com.abdullah.focustodo"
     compileSdk rootProject.ext.compileSdkVersion
+    signingConfigs {
+        release {
+            if (keystoreProperties.containsKey("storeFile")) {
+                storeFile file(keystoreProperties["storeFile"])
+                storePassword keystoreProperties["storePassword"]
+                keyAlias keystoreProperties["keyAlias"]
+                keyPassword keystoreProperties["keyPassword"]
+            }
+        }
+    }
     defaultConfig {
         applicationId "com.abdullah.focustodo"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -19,6 +37,7 @@ android {
     buildTypes {
         release {
             minifyEnabled false
+            signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
@@ -40,6 +59,13 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
+    // Firebase BoM ensures aligned versions across Firebase libraries
+    implementation platform("com.google.firebase:firebase-bom:34.5.0")
+    // Core analytics dependency (remove if not needed)
+    implementation "com.google.firebase:firebase-analytics"
+    // TODO: add other Firebase products as needed, e.g.:
+    // implementation "com.google.firebase:firebase-auth"
+    // implementation "com.google.firebase:firebase-firestore"
 }
 
 apply from: 'capacitor.build.gradle'

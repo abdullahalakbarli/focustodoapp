@@ -33,13 +33,12 @@ export const TaskList = ({ selectedDate, userId }: TaskListProps) => {
 
   const fetchTasks = async () => {
     setLoading(true);
-    const dateStr = format(selectedDate, "yyyy-MM-dd");
 
     const { data, error } = await supabase
       .from("tasks")
       .select("*")
       .eq("user_id", userId)
-      .eq("scheduled_date", dateStr)
+      .eq("scheduled_date", format(selectedDate, "yyyy-MM-dd"))
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -73,9 +72,9 @@ export const TaskList = ({ selectedDate, userId }: TaskListProps) => {
   };
 
   return (
-    <Card className="shadow-soft">
+    <Card className="shadow-soft text-sm">
       <CardHeader>
-        <CardTitle>Tasks for {format(selectedDate, "MMMM d, yyyy")}</CardTitle>
+        <CardTitle className="text-lg">Tasks for {format(selectedDate, "MMMM d, yyyy")}</CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -85,17 +84,17 @@ export const TaskList = ({ selectedDate, userId }: TaskListProps) => {
             No tasks scheduled for this day
           </p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {tasks.map((task) => (
               <div
                 key={task.id}
-                className="flex items-start gap-3 p-3 rounded-lg bg-accent/50 hover:bg-accent transition-colors border-l-4"
+                className="flex items-start gap-3 rounded-lg bg-accent/50 hover:bg-accent transition-colors border-l-4 p-2"
                 style={{ borderLeftColor: task.color }}
               >
                 <Checkbox
                   checked={task.completed}
                   onCheckedChange={() => toggleTaskComplete(task.id, task.completed)}
-                  className="mt-1"
+                  className="mt-0.5 h-4 w-4"
                 />
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center justify-between gap-2">
@@ -104,20 +103,29 @@ export const TaskList = ({ selectedDate, userId }: TaskListProps) => {
                         className="w-3 h-3 rounded-full flex-shrink-0"
                         style={{ backgroundColor: task.color }}
                       />
-                      <p className={task.completed ? "line-through text-muted-foreground" : ""}>
+                      <p className={task.completed ? "line-through text-muted-foreground text-sm" : "text-sm"}>
                         {task.name}
                       </p>
                     </div>
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge
+                      variant="secondary"
+                      className="text-xs px-2 py-0.5"
+                    >
                       {task.duration_minutes}m
                     </Badge>
                   </div>
-                  <div className="flex gap-2">
-                    <Badge variant="outline" className="text-xs capitalize">
+                  <div className="flex gap-2 flex-wrap">
+                    <Badge
+                      variant="outline"
+                      className="text-xs capitalize px-2 py-0.5"
+                    >
                       {task.category}
                     </Badge>
                     {task.recurrence && (
-                      <Badge variant="outline" className="text-xs capitalize">
+                      <Badge
+                        variant="outline"
+                        className="text-xs capitalize px-2 py-0.5"
+                      >
                         {task.recurrence}
                       </Badge>
                     )}

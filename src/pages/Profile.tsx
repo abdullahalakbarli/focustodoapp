@@ -9,15 +9,21 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { LogOut, Moon, Sun, Bell, Edit } from "lucide-react";
 import { ProfileInfo } from "@/components/profile/ProfileInfo";
+import { useThemeMode, ThemeMode } from "@/contexts/ThemeContext";
 
 export default function Profile() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [themeMode, setThemeMode] = useState("light");
+  const { mode: themeModeGlobal, setTheme } = useThemeMode();
+  const [themeMode, setThemeMode] = useState<ThemeMode>("light");
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    setThemeMode(themeModeGlobal);
+  }, [themeModeGlobal]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -52,7 +58,10 @@ export default function Profile() {
 
     if (data) {
       setProfile(data);
-      setThemeMode(data.theme_mode || "light");
+      if (data.theme_mode && data.theme_mode !== themeMode) {
+        await setTheme(data.theme_mode as ThemeMode);
+      }
+      setThemeMode((data.theme_mode as ThemeMode) || "light");
       setNotificationsEnabled(data.notifications_enabled ?? true);
     }
     setLoading(false);
@@ -77,19 +86,35 @@ export default function Profile() {
         description: "Failed to update setting",
         variant: "destructive",
       });
+      return false;
     } else {
       toast({
         title: "Updated",
         description: "Setting saved successfully",
       });
+      return true;
     }
   };
 
-  const toggleTheme = async () => {
-    const newTheme = themeMode === "light" ? "dark" : "light";
+  useEffect(() => {
+    const root = document.documentElement;
+    if (themeMode === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+  }, [themeMode]);
+
+  const toggleTheme = async (checked: boolean) => {
+    const newTheme = checked ? "dark" : "light";
+    const previousTheme = themeMode;
     setThemeMode(newTheme);
-    await updateSetting("theme_mode", newTheme);
-    document.documentElement.classList.toggle("dark");
+    await setTheme(newTheme);
+    const success = await updateSetting("theme_mode", newTheme);
+    if (!success) {
+      await setTheme(previousTheme);
+      setThemeMode(previousTheme);
+    }
   };
 
   const toggleNotifications = async () => {
@@ -130,7 +155,7 @@ export default function Profile() {
                 )}
                 <Label>Dark Mode</Label>
               </div>
-              <Switch checked={themeMode === "dark"} onCheckedChange={toggleTheme} />
+              <Switch checked={themeMode === "dark"} onCheckedChange={(checked) => toggleTheme(checked)} />
             </div>
 
             <div className="flex items-center justify-between">

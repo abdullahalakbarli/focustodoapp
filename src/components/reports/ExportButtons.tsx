@@ -1,10 +1,13 @@
 import { Button } from "@/components/ui/button";
-import { Download, FileText, Table } from "lucide-react";
+import { FileText, Table } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
+import { Capacitor } from "@capacitor/core";
+import { Directory, Encoding, Filesystem, GetUriResult } from "@capacitor/filesystem";
+import { Share } from "@capacitor/share";
 
 interface ExportButtonsProps {
   userId: string;
@@ -12,6 +15,57 @@ interface ExportButtonsProps {
 }
 
 export const ExportButtons = ({ userId, period }: ExportButtonsProps) => {
+  const isNative = Capacitor.isNativePlatform();
+
+  const describePath = (uriOrPath: string | null) => {
+    if (!uriOrPath) return "device storage";
+    if (uriOrPath.startsWith("file://")) {
+      return uriOrPath.replace("file://", "");
+    }
+    return uriOrPath;
+  };
+
+  const writeNativeFile = async (fileName: string, data: string, encoding?: Encoding) => {
+    const platform = Capacitor.getPlatform();
+    const directory = Directory.Documents;
+    const folder = "FocusMind";
+    try {
+      // Ensure directory exists
+      await Filesystem.mkdir({
+        directory,
+        path: folder,
+        recursive: true,
+      });
+    } catch (err: any) {
+      if (err?.message?.includes("already exists") === false) {
+        console.warn("Unable to create directory", err);
+      }
+    }
+
+    const filePath = `${folder}/${fileName}`;
+    await Filesystem.writeFile({
+      directory,
+      path: filePath,
+      data,
+      encoding,
+    });
+
+    const stat = (await Filesystem.stat({
+      directory,
+      path: filePath,
+    })) as GetUriResult & { uri?: string };
+
+    if (stat?.uri) {
+      await Share.share({
+        url: stat.uri,
+        title: fileName,
+        text: "Share or save your report",
+      });
+    }
+
+    return filePath;
+  };
+
   const fetchSessionData = async () => {
     const now = new Date();
     let startDate = new Date();
@@ -67,12 +121,25 @@ export const ExportButtons = ({ userId, period }: ExportButtonsProps) => {
       }),
     ].join("\n");
 
-    // Create blob and download
+    const fileName = `focus-sessions-${period}-${format(new Date(), "yyyy-MM-dd")}.csv`;
+
+    if (isNative) {
+      try {
+        const path = await writeNativeFile(fileName, csvContent, Encoding.UTF8);
+        toast.success(`CSV ready to share: ${describePath(path)}`);
+      } catch (error) {
+        console.error("CSV save failed", error);
+        toast.error("Failed to save CSV file. Please try again.");
+      }
+      return;
+    }
+
+    // Web download fallback
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", `focus-sessions-${period}-${format(new Date(), "yyyy-MM-dd")}.csv`);
+    link.setAttribute("download", fileName);
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
@@ -135,8 +202,23 @@ export const ExportButtons = ({ userId, period }: ExportButtonsProps) => {
       },
     });
 
-    // Save PDF
-    doc.save(`focus-sessions-${period}-${format(new Date(), "yyyy-MM-dd")}.pdf`);
+    const fileName = `focus-sessions-${period}-${format(new Date(), "yyyy-MM-dd")}.pdf`;
+
+    if (isNative) {
+      try {
+        const dataUri = doc.output("datauristring");
+        const base64 = dataUri.split(",")[1];
+        const path = await writeNativeFile(fileName, base64);
+        toast.success(`PDF ready to share: ${describePath(path)}`);
+      } catch (error) {
+        console.error("PDF save failed", error);
+        toast.error("Failed to save PDF file. Please try again.");
+      }
+      return;
+    }
+
+    // Web download
+    doc.save(fileName);
     toast.success("PDF downloaded successfully");
   };
 

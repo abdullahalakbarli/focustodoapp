@@ -102,7 +102,7 @@ export default function Leaderboard() {
               <Trophy className="h-6 w-6 text-primary" />
             </div>
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2 tracking-tight">
+          <h1 className="text-4xl font-bold text-foreground dark:text-white mb-2 tracking-tight">
             Leaderboard
           </h1>
           <p className="text-muted-foreground text-sm font-medium">Top performers by points</p>

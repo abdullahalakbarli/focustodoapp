@@ -6,6 +6,46 @@
     <title>sunintellect-flow</title>
     <meta name="description" content="Focus To DO App by Abdullah" />
     <meta name="author" content="Abdullah Alakbarli" />
+    <script>
+      (function () {
+        var applyTheme = function (mode) {
+          if (mode === "dark") {
+            document.documentElement.classList.add("dark");
+          } else {
+            document.documentElement.classList.remove("dark");
+          }
+        };
+        try {
+          var saved =
+            localStorage.getItem("theme_mode") ||
+            localStorage.getItem("theme");
+          if (saved) {
+            applyTheme(saved);
+          }
+          if (
+            window.Capacitor &&
+            window.Capacitor.Plugins &&
+            window.Capacitor.Plugins.Preferences &&
+            window.Capacitor.Plugins.Preferences.get
+          ) {
+            window.Capacitor.Plugins.Preferences.get({ key: "theme_mode" })
+              .then(function (result) {
+                if (result && result.value) {
+                  localStorage.setItem("theme_mode", result.value);
+                  applyTheme(result.value);
+                } else if (!saved) {
+                  applyTheme("light");
+                }
+              })
+              .catch(function () {});
+          } else if (!saved) {
+            applyTheme("light");
+          }
+        } catch (e) {
+          // ignore errors accessing storage
+        }
+      })();
+    </script>
   </head>
 
   <body>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 // Gamification milestones (points needed for each level)
@@ -19,8 +19,9 @@ export const usePoints = () => {
   const [loading, setLoading] = useState(true);
 
   // Fetch current points from database
-  const fetchPoints = async () => {
+  const fetchPoints = useCallback(async () => {
     try {
+      setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
@@ -37,7 +38,7 @@ export const usePoints = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Calculate points from minutes: 1 point per 10 minutes
   const calculatePoints = (minutes: number): number => {
@@ -95,7 +96,31 @@ export const usePoints = () => {
 
   useEffect(() => {
     fetchPoints();
-  }, []);
+  }, [fetchPoints]);
+
+  useEffect(() => {
+    const handlePointsUpdated = (event: Event) => {
+      const detail = (event as CustomEvent<number>).detail;
+      if (typeof detail === "number") {
+        setPoints(detail);
+        setLoading(false);
+      } else {
+        fetchPoints();
+      }
+    };
+
+    const handlePointsRefresh = () => {
+      fetchPoints();
+    };
+
+    window.addEventListener("points:updated", handlePointsUpdated as EventListener);
+    window.addEventListener("points:refresh", handlePointsRefresh);
+
+    return () => {
+      window.removeEventListener("points:updated", handlePointsUpdated as EventListener);
+      window.removeEventListener("points:refresh", handlePointsRefresh);
+    };
+  }, [fetchPoints]);
 
   return {
     points,

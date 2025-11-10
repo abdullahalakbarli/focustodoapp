@@ -44,7 +44,7 @@ export const TaskForm = ({ onSuccess }: TaskFormProps) => {
   const [name, setName] = useState("");
   const [category, setCategory] = useState("study");
   const [duration, setDuration] = useState(25);
-  const [scheduledDate, setScheduledDate] = useState<Date>();
+  const [scheduledDate, setScheduledDate] = useState<Date>(() => new Date());
   const [recurrence, setRecurrence] = useState<string>();
   const [color, setColor] = useState(PRESET_COLORS[0]);
   const [loading, setLoading] = useState(false);
@@ -66,11 +66,13 @@ export const TaskForm = ({ onSuccess }: TaskFormProps) => {
       return;
     }
 
+    const effectiveDate = scheduledDate ?? new Date();
+
     const { error } = await supabase.from("tasks").insert([{
       name,
       category: category as Database["public"]["Enums"]["task_category"],
       duration_minutes: duration,
-      scheduled_date: scheduledDate ? format(scheduledDate, "yyyy-MM-dd") : null,
+      scheduled_date: format(effectiveDate, "yyyy-MM-dd"),
       recurrence,
       color,
       user_id: user.id,
@@ -135,7 +137,7 @@ export const TaskForm = ({ onSuccess }: TaskFormProps) => {
       </div>
 
       <div className="space-y-2">
-        <Label>Scheduled Date (Optional)</Label>
+        <Label>Scheduled Date</Label>
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -146,14 +148,14 @@ export const TaskForm = ({ onSuccess }: TaskFormProps) => {
               )}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {scheduledDate ? format(scheduledDate, "PPP") : "Pick a date"}
+              {scheduledDate ? format(scheduledDate, "PPP") : format(new Date(), "PPP")}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
             <Calendar
               mode="single"
               selected={scheduledDate}
-              onSelect={setScheduledDate}
+              onSelect={(date) => setScheduledDate(date ?? new Date())}
               initialFocus
               className="pointer-events-auto"
             />

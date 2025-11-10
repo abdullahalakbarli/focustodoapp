@@ -65,7 +65,37 @@ export default function Focus() {
               <span className="text-2xl">🎯</span>
             </div>
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2 tracking-tight">
+          <h1
+            className="text-4xl font-bold text-foreground dark:text-white mb-2 tracking-tight select-none cursor-pointer"
+            role="button"
+            aria-label="Open admin access"
+            draggable={false}
+            style={{ userSelect: "none", WebkitUserSelect: "none" }}
+            onContextMenu={(e) => e.preventDefault()}
+            onMouseDown={(e) => e.preventDefault()}
+            onTouchStart={(e) => e.preventDefault()}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              const target = e.currentTarget as HTMLElement & { __lpTimer?: any };
+              target.__lpTimer = setTimeout(() => {
+                window.location.href = "/admin-auth";
+              }, 1200);
+            }}
+            onPointerUp={(e) => {
+              const target = e.currentTarget as any;
+              if (target.__lpTimer) {
+                clearTimeout(target.__lpTimer);
+                target.__lpTimer = null;
+              }
+            }}
+            onPointerLeave={(e) => {
+              const target = e.currentTarget as any;
+              if (target.__lpTimer) {
+                clearTimeout(target.__lpTimer);
+                target.__lpTimer = null;
+              }
+            }}
+          >
             FocusMind
           </h1>
           <p className="text-muted-foreground text-sm font-medium">Stay focused, be productive</p>
