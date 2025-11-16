@@ -92,25 +92,36 @@ export default function Auth() {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-      redirectTo: `${window.location.origin}/auth`,
-    });
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE_URL as string | undefined;
+      if (!apiBase) {
+        throw new Error("Password reset API is not configured.");
+      }
 
-    setLoading(false);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
+      const res = await fetch(`${apiBase}/auth/request-password-reset`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetEmail }),
       });
-    } else {
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to send reset email");
+      }
+
       toast({
         title: "Email sent successfully",
         description: "Check your email for the password reset link.",
       });
       setShowForgotPassword(false);
       setResetEmail("");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send reset email",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 

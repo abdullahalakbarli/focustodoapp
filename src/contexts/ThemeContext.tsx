@@ -2,6 +2,7 @@
 
 
 
+
 import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Preferences } from "@capacitor/preferences";

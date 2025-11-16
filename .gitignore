@@ -26,3 +26,8 @@ dist-ssr
 # Android release signing
 android/app/focus-release.keystore
 android/keystore.properties
+
+# Environment variables
+.env
+.env.local
+.env.*.local

@@ -18,6 +18,8 @@ import Leaderboard from "./pages/Leaderboard";
 import NotFound from "./pages/NotFound";
 import AdminAuth from "./pages/AdminAuth";
 import AdminPanel from "./pages/AdminPanel";
+import ResetPassword from "./pages/ResetPassword";
+import EmailVerification from "./pages/EmailVerification";
 import { AdminProvider } from "./contexts/AdminContext";
 
 const queryClient = new QueryClient();
@@ -180,6 +182,8 @@ const App = () => {
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/edit-profile" element={<EditProfile />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/email-verification" element={<EmailVerification />} />
                 <Route path="/admin-auth" element={<AdminAuth />} />
                 <Route path="/admin" element={<AdminPanel />} />
                 <Route path="*" element={<NotFound />} />
