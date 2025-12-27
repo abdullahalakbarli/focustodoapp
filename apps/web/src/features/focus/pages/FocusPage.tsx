@@ -12,31 +12,23 @@ import { PointsDisplay } from "@/shared/components/gamification/PointsDisplay";
 import { AchievementsDialog } from "@/shared/components/gamification/AchievementsDialog";
 
 export default function Focus() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<any>(null);
   const navigate = useNavigate();
   const { category, setCategory, duration, setDuration, isActive } = useTimer();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        navigate("/auth");
-      } else {
-        setUser(session.user);
-      }
+      setUser(session?.user || null);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) {
-        navigate("/auth");
-      } else {
-        setUser(session.user);
-      }
+      setUser(session?.user || null);
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, []);
 
   // Persist current category to localStorage for session completion
   useEffect(() => {
@@ -48,8 +40,6 @@ export default function Focus() {
     window.dispatchEvent(new Event("customCategoryAdded"));
     setCategory(newCategory);
   };
-
-  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/8 via-background via-50% to-accent/8 pb-24 relative overflow-hidden">
@@ -101,15 +91,35 @@ export default function Focus() {
           <p className="text-muted-foreground text-sm font-medium">Stay focused, be productive</p>
         </div>
 
-        {/* Points Display */}
-        <div className="mb-6">
-          <PointsDisplay />
-        </div>
+        {/* Guest Mode Alert */}
+        {!user && (
+          <div className="mb-6 p-4 rounded-xl border-2 border-primary/20 bg-primary/5">
+            <p className="text-sm text-center text-muted-foreground">
+              💡 <strong>Guest Mode:</strong> Timer works but sessions won't be saved.{" "}
+              <button 
+                onClick={() => navigate("/auth")} 
+                className="text-primary hover:underline font-medium"
+              >
+                Sign in
+              </button>{" "}
+              to save your progress!
+            </p>
+          </div>
+        )}
 
-        {/* Achievements */}
-        <div className="flex justify-center mb-6">
-          <AchievementsDialog />
-        </div>
+        {/* Points Display - Only show for authenticated users */}
+        {user && (
+          <div className="mb-6">
+            <PointsDisplay />
+          </div>
+        )}
+
+        {/* Achievements - Only show for authenticated users */}
+        {user && (
+          <div className="flex justify-center mb-6">
+            <AchievementsDialog />
+          </div>
+        )}
 
         {/* Timer Display */}
         <TimerDisplay />

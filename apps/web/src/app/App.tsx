@@ -14,6 +14,7 @@ import PlannerPage from "@/features/planner/pages/PlannerPage";
 import ProfilePage from "@/features/profile/pages/ProfilePage";
 import EditProfilePage from "@/features/profile/pages/EditProfilePage";
 import LoginPage from "@/features/auth/pages/LoginPage";
+import LandingPage from "@/features/auth/pages/LandingPage";
 import LeaderboardPage from "@/features/leaderboard/pages/LeaderboardPage";
 import NotFoundPage from "@/features/admin/pages/NotFoundPage";
 import AdminAuthPage from "@/features/admin/pages/AdminAuthPage";
@@ -21,6 +22,8 @@ import AdminPanelPage from "@/features/admin/pages/AdminPanelPage";
 import ResetPasswordPage from "@/features/auth/pages/ResetPasswordPage";
 import EmailVerificationPage from "@/features/auth/pages/EmailVerificationPage";
 import { AdminProvider } from "@/shared/contexts/AdminContext";
+import { ProtectedRoute } from "@/shared/components/ProtectedRoute";
+import { HomeRoute } from "@/shared/components/HomeRoute";
 
 const queryClient = new QueryClient();
 
@@ -121,7 +124,15 @@ const App = () => {
 
   const handleSessionComplete = useCallback(async ({ durationMinutes, awardedIntervals }: { durationMinutes: number; awardedIntervals: number }) => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+    if (!session) {
+      // Guest mode - show friendly message
+      const friendlyMinutes = Math.round(durationMinutes * 10) / 10;
+      toast({
+        title: "Session Complete! 🎉",
+        description: `Great work! You completed a ${friendlyMinutes}-minute session. Sign in to save your progress and earn points!`,
+      });
+      return;
+    }
 
     try {
       // Calculate and award points: 1 point per 10 minutes
@@ -175,17 +186,17 @@ const App = () => {
             <Sonner />
             <BrowserRouter>
               <Routes>
-                <Route path="/" element={<FocusPage />} />
+                <Route path="/" element={<HomeRoute />} />
                 <Route path="/leaderboard" element={<LeaderboardPage />} />
-                <Route path="/reports" element={<ReportsPage />} />
-                <Route path="/planner" element={<PlannerPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/edit-profile" element={<EditProfilePage />} />
-                <Route path="/auth" element={<LoginPage />} />
+                <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+                <Route path="/planner" element={<ProtectedRoute><PlannerPage /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+                <Route path="/edit-profile" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
+                <Route path="/auth" element={<ProtectedRoute requireAuth={false}><LoginPage /></ProtectedRoute>} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/email-verification" element={<EmailVerificationPage />} />
                 <Route path="/admin-auth" element={<AdminAuthPage />} />
-                <Route path="/admin" element={<AdminPanelPage />} />
+                <Route path="/admin" element={<ProtectedRoute><AdminPanelPage /></ProtectedRoute>} />
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </BrowserRouter>

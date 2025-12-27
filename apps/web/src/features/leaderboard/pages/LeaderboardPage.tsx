@@ -21,31 +21,22 @@ export default function Leaderboard() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        navigate("/auth");
-      } else {
-        setUser(session.user);
-      }
+      setUser(session?.user || null);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) {
-        navigate("/auth");
-      } else {
-        setUser(session.user);
-      }
+      setUser(session?.user || null);
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
-    if (user) {
-      fetchLeaderboard();
-    }
-  }, [user]);
+    // Fetch leaderboard for both guests and authenticated users
+    fetchLeaderboard();
+  }, []);
 
   const fetchLeaderboard = async () => {
     try {
@@ -73,10 +64,8 @@ export default function Leaderboard() {
     }
   };
 
-  if (!user) return null;
-
-  const currentUserRank = leaderboard.findIndex((u) => u.id === user.id) + 1;
-  const currentUserData = leaderboard.find((u) => u.id === user.id);
+  const currentUserRank = user ? leaderboard.findIndex((u) => u.id === user.id) + 1 : null;
+  const currentUserData = user ? leaderboard.find((u) => u.id === user.id) : null;
 
   const getRankIcon = (rank: number) => {
     if (rank === 1) return <Crown className="h-6 w-6 text-yellow-500" />;
@@ -107,6 +96,23 @@ export default function Leaderboard() {
           </h1>
           <p className="text-muted-foreground text-sm font-medium">Top performers by points</p>
         </div>
+
+        {/* Guest Message */}
+        {!user && (
+          <Card className="mb-6 shadow-soft-lg border-2 border-primary/20 bg-primary/5">
+            <CardContent className="pt-6">
+              <p className="text-sm text-center text-muted-foreground">
+                💡 <strong>Sign in</strong> to see your rank and compete on the leaderboard!{" "}
+                <button 
+                  onClick={() => navigate("/auth")} 
+                  className="text-primary hover:underline font-medium"
+                >
+                  Get Started
+                </button>
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Current User Rank */}
         {currentUserData && (
