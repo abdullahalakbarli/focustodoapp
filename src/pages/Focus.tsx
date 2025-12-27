@@ -111,8 +111,11 @@ export default function Focus() {
           <AchievementsDialog />
         </div>
 
+        {/* Timer Display */}
+        <TimerDisplay />
+
         {/* Category & Duration Selection */}
-        <div className="space-y-4 mb-6">
+        <div className="space-y-4 mb-6 mt-8">
           <div className="flex flex-col gap-4">
             <div className="w-full">
               <CategorySelector
@@ -142,9 +145,6 @@ export default function Focus() {
             </div>
           </div>
         </div>
-
-        {/* Timer Display */}
-        <TimerDisplay />
 
         {/* Custom Category */}
         <div className="mt-8 mb-6">
