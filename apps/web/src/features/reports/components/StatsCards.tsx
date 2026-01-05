@@ -37,7 +37,22 @@ export const StatsCards = ({ period, userId, extraMinutes = 0, currentCategoryHi
 
     if (data) {
       // Calculate total by summing actual session durations (not session count × fixed duration)
-      const totalMinutes = data.reduce((sum, session) => sum + session.duration_minutes, 0);
+      // Debug: Log session data to verify values
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Focus sessions data:', data.map(s => ({ 
+          id: s.id, 
+          duration: s.duration_minutes, 
+          category: s.category,
+          created: s.created_at 
+        })));
+      }
+      
+      const totalMinutes = data.reduce((sum, session) => {
+        const duration = typeof session.duration_minutes === 'number' 
+          ? session.duration_minutes 
+          : parseFloat(session.duration_minutes) || 0;
+        return sum + duration;
+      }, 0);
       const sessions = data.length;
 
       const categoryCounts = data.reduce((acc: any, session) => {

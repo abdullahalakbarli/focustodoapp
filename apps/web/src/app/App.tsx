@@ -112,11 +112,25 @@ const App = () => {
       try {
         // Normalize category to lowercase for consistency, but allow any custom category
         const normalizedCategory = category.toLowerCase().trim();
-        await supabase.from("focus_sessions").insert({
+        // Ensure amount is a valid number and round to 2 decimal places
+        const durationValue = Math.max(0, Math.round(amount * 100) / 100);
+        
+        if (durationValue <= 0) {
+          console.warn("Attempted to save session with zero or negative duration:", amount);
+          return;
+        }
+
+        const { error } = await supabase.from("focus_sessions").insert({
           user_id: session.user.id,
           category: normalizedCategory,
-          duration_minutes: amount,
+          duration_minutes: durationValue,
         });
+
+        if (error) {
+          console.error("Error saving focus segment:", error);
+        } else if (process.env.NODE_ENV === 'development') {
+          console.log(`Saved focus segment: ${durationValue} minutes for category "${normalizedCategory}"`);
+        }
       } catch (error) {
         console.error("Error saving focus segment:", error);
       }
