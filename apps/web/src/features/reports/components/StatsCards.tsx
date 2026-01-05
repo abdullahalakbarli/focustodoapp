@@ -36,6 +36,7 @@ export const StatsCards = ({ period, userId, extraMinutes = 0, currentCategoryHi
       .gte("created_at", startDate.toISOString());
 
     if (data) {
+      // Calculate total by summing actual session durations (not session count × fixed duration)
       const totalMinutes = data.reduce((sum, session) => sum + session.duration_minutes, 0);
       const sessions = data.length;
 

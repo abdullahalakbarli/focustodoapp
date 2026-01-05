@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { StatsCards } from "../components/StatsCards";
 import { FocusChart } from "../components/FocusChart";
+import { WeeklyFocusDistribution } from "../components/WeeklyFocusDistribution";
 import { ExportButtons } from "../components/ExportButtons";
 import { useTimer } from "@/shared/contexts/TimerContext";
 
@@ -73,7 +74,7 @@ export default function Reports() {
               extraMinutes={inProgressMinutes}
               currentCategoryHint={category}
             />
-            <FocusChart period="weekly" userId={user.id} />
+            <WeeklyFocusDistribution userId={user.id} />
           </TabsContent>
 
           <TabsContent value="monthly" className="space-y-6">

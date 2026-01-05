@@ -37,6 +37,7 @@ export default function Focus() {
 
   const handleCategoryAdded = (newCategory: string) => {
     // Dispatch custom event to refresh CategorySelector
+    // The useCategories hook will automatically update, but we dispatch for other components
     window.dispatchEvent(new Event("customCategoryAdded"));
     setCategory(newCategory);
   };

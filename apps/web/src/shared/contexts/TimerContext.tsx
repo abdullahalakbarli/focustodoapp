@@ -167,14 +167,16 @@ export const TimerProvider = ({ children, onComplete, onProgress, onSegment }: T
           return currentSeconds;
         }
 
+        // When includeRemainder is true, save all accumulated time (including partial minutes)
+        // When false, only save full minutes and keep the remainder for next flush
         const secondsToUse = includeRemainder ? currentSeconds : currentSeconds - (currentSeconds % 60);
         if (secondsToUse <= 0) {
           return currentSeconds;
         }
 
-        const minutesValue = includeRemainder
-          ? Math.round((secondsToUse / 60) * 100) / 100
-          : secondsToUse / 60;
+        // Convert to minutes with precision to preserve all time
+        // Use high precision to avoid losing seconds
+        const minutesValue = secondsToUse / 60;
 
         if (latestOnSegment.current && minutesValue > 0) {
           latestOnSegment.current({
@@ -204,8 +206,10 @@ export const TimerProvider = ({ children, onComplete, onProgress, onSegment }: T
           if (prev <= 1) {
             setIsActive(false);
             setInProgressSeconds(sessionTotalSeconds);
+            // Flush all remaining category time before completion
             flushCategory(categoryRef.current, true);
             setAwardedIntervals((prevIntervals) => {
+              // Calculate total intervals based on full session duration
               const totalIntervals = Math.floor(sessionTotalSeconds / 600);
               if (totalIntervals > prevIntervals && latestOnProgress.current) {
                 latestOnProgress.current(totalIntervals - prevIntervals);
@@ -215,15 +219,18 @@ export const TimerProvider = ({ children, onComplete, onProgress, onSegment }: T
             if (typeof window !== "undefined") {
               window.dispatchEvent(new Event("timer:complete"));
             }
+            // Calculate final awarded intervals based on actual session duration
+            const finalAwardedIntervals = Math.floor(sessionTotalSeconds / 600);
             persistState({
               remainingSeconds: 0,
               inProgressSeconds: sessionTotalSeconds,
               isActive: false,
               lastSaved: nowSeconds(),
             });
+            // Pass the actual session duration and awarded intervals
             latestOnComplete.current({
               durationMinutes: sessionTotalSeconds / 60,
-              awardedIntervals,
+              awardedIntervals: finalAwardedIntervals,
             });
             localStorage.removeItem(TIMER_STORAGE_KEY);
             return 0;
@@ -329,10 +336,13 @@ export const TimerProvider = ({ children, onComplete, onProgress, onSegment }: T
   };
 
   const onSessionComplete = () => {
+    // Flush all remaining category time
     flushCategory(categoryRef.current, true);
+    // Calculate final awarded intervals based on actual session duration
+    const finalAwardedIntervals = Math.floor(sessionTotalSeconds / 600);
     latestOnComplete.current({
       durationMinutes: sessionTotalSeconds / 60,
-      awardedIntervals,
+      awardedIntervals: finalAwardedIntervals,
     });
     setAwardedIntervals(0);
     setInProgressSeconds(0);

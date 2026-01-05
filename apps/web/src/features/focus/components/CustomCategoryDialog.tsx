@@ -10,7 +10,7 @@ import {
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { Plus } from "lucide-react";
-import { toast } from "@/shared/hooks/use-toast";
+import { useCategories } from "@/shared/hooks/useCategories";
 
 interface CustomCategoryDialogProps {
   onCategoryAdded: (category: string) => void;
@@ -19,47 +19,26 @@ interface CustomCategoryDialogProps {
 export const CustomCategoryDialog = ({ onCategoryAdded }: CustomCategoryDialogProps) => {
   const [categoryName, setCategoryName] = useState("");
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { addCategory } = useCategories();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!categoryName.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a category name",
-        variant: "destructive",
-      });
       return;
     }
 
-    // Get existing custom categories
-    const existingCategories = JSON.parse(
-      localStorage.getItem("customCategories") || "[]"
-    );
-
-    // Check if category already exists
-    if (existingCategories.includes(categoryName.trim())) {
-      toast({
-        title: "Error",
-        description: "This category already exists",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Add new category
-    const updatedCategories = [...existingCategories, categoryName.trim()];
-    localStorage.setItem("customCategories", JSON.stringify(updatedCategories));
-
-    onCategoryAdded(categoryName.trim());
+    setLoading(true);
+    const success = await addCategory(categoryName.trim());
     
-    toast({
-      title: "Success",
-      description: "Custom category added successfully",
-    });
-
-    setCategoryName("");
-    setOpen(false);
+    if (success) {
+      onCategoryAdded(categoryName.trim());
+      setCategoryName("");
+      setOpen(false);
+    }
+    
+    setLoading(false);
   };
 
   return (
@@ -85,8 +64,8 @@ export const CustomCategoryDialog = ({ onCategoryAdded }: CustomCategoryDialogPr
               maxLength={20}
             />
           </div>
-          <Button type="submit" className="w-full">
-            Add Category
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? "Adding..." : "Add Category"}
           </Button>
         </form>
       </DialogContent>

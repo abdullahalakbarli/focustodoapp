@@ -70,7 +70,7 @@ export const TaskForm = ({ onSuccess }: TaskFormProps) => {
 
     const { error } = await supabase.from("tasks").insert([{
       name,
-      category: category as Database["public"]["Enums"]["task_category"],
+      category: category.toLowerCase().trim(),
       duration_minutes: duration,
       scheduled_date: format(effectiveDate, "yyyy-MM-dd"),
       recurrence,

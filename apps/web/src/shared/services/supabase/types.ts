@@ -16,7 +16,7 @@ export type Database = {
     Tables: {
       focus_sessions: {
         Row: {
-          category: Database["public"]["Enums"]["task_category"]
+          category: string
           completed_at: string | null
           created_at: string | null
           duration_minutes: number
@@ -25,7 +25,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          category: Database["public"]["Enums"]["task_category"]
+          category: string
           completed_at?: string | null
           created_at?: string | null
           duration_minutes: number
@@ -34,7 +34,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          category?: Database["public"]["Enums"]["task_category"]
+          category?: string
           completed_at?: string | null
           created_at?: string | null
           duration_minutes?: number
@@ -87,7 +87,7 @@ export type Database = {
       }
       tasks: {
         Row: {
-          category: Database["public"]["Enums"]["task_category"]
+          category: string
           completed: boolean | null
           created_at: string | null
           duration_minutes: number
@@ -99,7 +99,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          category?: Database["public"]["Enums"]["task_category"]
+          category?: string
           completed?: boolean | null
           created_at?: string | null
           duration_minutes: number
@@ -111,7 +111,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          category?: Database["public"]["Enums"]["task_category"]
+          category?: string
           completed?: boolean | null
           created_at?: string | null
           duration_minutes?: number
@@ -121,6 +121,33 @@ export type Database = {
           scheduled_date?: string | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_categories: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          is_deleted: boolean
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          is_deleted?: boolean
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          is_deleted?: boolean
+          created_at?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }

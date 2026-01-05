@@ -110,9 +110,11 @@ const App = () => {
       if (!session) return;
 
       try {
+        // Normalize category to lowercase for consistency, but allow any custom category
+        const normalizedCategory = category.toLowerCase().trim();
         await supabase.from("focus_sessions").insert({
           user_id: session.user.id,
-          category: category.toLowerCase() as Database["public"]["Enums"]["task_category"],
+          category: normalizedCategory,
           duration_minutes: amount,
         });
       } catch (error) {
@@ -136,6 +138,7 @@ const App = () => {
 
     try {
       // Calculate and award points: 1 point per 10 minutes
+      // Use the full durationMinutes to calculate points, ensuring no time is lost
       const totalSessionPoints = Math.floor(durationMinutes / 10);
       const remainingPoints = Math.max(totalSessionPoints - awardedIntervals, 0);
       const friendlyMinutes = Math.round(durationMinutes * 10) / 10;
