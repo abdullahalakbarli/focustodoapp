@@ -7,9 +7,11 @@ echo "🔧 Focus Studio Backend Setup"
 echo "=============================="
 echo ""
 
+ENV_FILE="../services/api/.env"
+
 # Check if .env already exists
-if [ -f "../.env" ]; then
-  echo "⚠️  .env file already exists!"
+if [ -f "$ENV_FILE" ]; then
+  echo "⚠️  $ENV_FILE already exists!"
   read -p "Do you want to overwrite it? (y/N): " overwrite
   if [ "$overwrite" != "y" ] && [ "$overwrite" != "Y" ]; then
     echo "Cancelled."
@@ -60,8 +62,10 @@ FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
 read -p "Server Port [default: 4000]: " PORT
 PORT=${PORT:-4000}
 
+mkdir -p "$(dirname "$ENV_FILE")"
+
 # Create .env file
-cat > ../.env << EOF
+cat > "$ENV_FILE" << EOF
 # Supabase Configuration
 SUPABASE_URL=$SUPABASE_URL
 SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY
@@ -82,11 +86,12 @@ PORT=$PORT
 EOF
 
 echo ""
-echo "✅ .env file created successfully!"
+echo "✅ $ENV_FILE created successfully!"
 echo ""
 echo "📝 Next steps:"
-echo "1. Review the .env file and make sure all values are correct"
-echo "2. Run the database setup SQL in Supabase (see server/README.md)"
-echo "3. Start the server: npm run server"
+echo "1. Review $ENV_FILE and make sure all values are correct"
+echo "2. Copy apps/web/.env.example to apps/web/.env and add your Supabase anon key"
+echo "3. Run the database setup SQL in Supabase (see services/api/README.md)"
+echo "4. Start the stack: npm run dev"
 echo ""
 

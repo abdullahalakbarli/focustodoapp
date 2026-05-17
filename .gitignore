@@ -43,6 +43,10 @@ services/api/.env
 # Supabase CLI temp files
 supabase/.temp/
 
+# Local tooling (history rewrite, etc.)
+.venv-filter/
+.git-filter-replacements.txt
+
 # OS / tooling
 Thumbs.db
 *.pem
