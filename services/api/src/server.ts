@@ -1,19 +1,24 @@
 
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
+import "./config/env.js";
 import { db } from "./config/database.js";
-import { hashToken, hashPassword } from "./utils/security.js";
+import { hashToken } from "./utils/security.js";
 import { sendVerificationEmail, sendPasswordResetEmail } from "./services/email.service.js";
 
-dotenv.config();
+const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 // Supabase Admin Client (for server-side operations)
 const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
   {
     auth: {
       autoRefreshToken: false,
@@ -25,16 +30,114 @@ const supabaseAdmin = createClient(
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests. Please try again later." },
+});
+
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many admin attempts. Please try again later." },
+});
+
+async function getUserFromBearer(req: express.Request) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) {
+    return null;
+  }
+  const token = authHeader.slice(7);
+  const { data, error } = await supabaseAdmin.auth.getUser(token);
+  if (error || !data.user) {
+    return null;
+  }
+  return data.user;
+}
+
 // Middleware
+app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error("Not allowed by CORS"));
+  },
   credentials: true,
 }));
-app.use(express.json());
+app.use(express.json({ limit: "32kb" }));
 
 // Health check
 app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+// ============================================
+// ADMIN ENDPOINTS (server-side secret only)
+// ============================================
+
+app.post("/admin/elevate", adminLimiter, async (req, res) => {
+  try {
+    const adminCode = process.env.ADMIN_CODE?.trim();
+    if (!adminCode) {
+      return res.status(503).json({ error: "Admin elevation is not configured on the server" });
+    }
+
+    const user = await getUserFromBearer(req);
+    if (!user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const { code } = req.body as { code?: string };
+    if (!code || code.trim() !== adminCode) {
+      return res.status(403).json({ error: "Invalid admin code" });
+    }
+
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update({ role: "admin" })
+      .eq("id", user.id);
+
+    if (error) {
+      console.error("[admin/elevate]", error);
+      return res.status(500).json({ error: "Failed to grant admin access" });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("[admin/elevate]", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/admin/revoke", adminLimiter, async (req, res) => {
+  try {
+    const user = await getUserFromBearer(req);
+    if (!user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update({ role: "user" })
+      .eq("id", user.id);
+
+    if (error) {
+      console.error("[admin/revoke]", error);
+      return res.status(500).json({ error: "Failed to revoke admin access" });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("[admin/revoke]", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 // ============================================
@@ -45,18 +148,23 @@ app.get("/health", (req, res) => {
  * POST /auth/request-password-reset
  * Request a password reset token
  */
-app.post("/auth/request-password-reset", async (req, res) => {
+app.post("/auth/request-password-reset", authLimiter, async (req, res) => {
   try {
     const { email } = req.body;
 
-    if (!email) {
+    if (!email || typeof email !== "string") {
       return res.status(400).json({ error: "Email is required" });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      return res.status(400).json({ error: "Invalid email address" });
     }
 
     // Check if user exists in Supabase auth
     const { data: authUser, error: authError } = await supabaseAdmin
       .auth.admin
-      .getUserByEmail(email);
+      .getUserByEmail(normalizedEmail);
 
     if (authError || !authUser?.user) {
       // Don't reveal if email exists (security best practice)
@@ -83,8 +191,8 @@ app.post("/auth/request-password-reset", async (req, res) => {
     );
 
     // Send email with reset link
-    const resetUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/reset-password?token=${rawToken}`;
-    await sendPasswordResetEmail(email, resetUrl, authUser.user.email);
+    const resetUrl = `${allowedOrigins[0]}/reset-password?token=${rawToken}`;
+    await sendPasswordResetEmail(normalizedEmail, resetUrl, authUser.user.email);
 
     res.json({
       success: true,
@@ -100,7 +208,7 @@ app.post("/auth/request-password-reset", async (req, res) => {
  * POST /auth/reset-password
  * Reset password using token
  */
-app.post("/auth/reset-password", async (req, res) => {
+app.post("/auth/reset-password", authLimiter, async (req, res) => {
   try {
     const { token, newPassword } = req.body;
 
@@ -108,7 +216,7 @@ app.post("/auth/reset-password", async (req, res) => {
       return res.status(400).json({ error: "Token and new password are required" });
     }
 
-    if (newPassword.length < 8) {
+    if (typeof newPassword !== "string" || newPassword.length < 8) {
       return res.status(400).json({ error: "Password must be at least 8 characters" });
     }
 
@@ -166,18 +274,20 @@ app.post("/auth/reset-password", async (req, res) => {
  * POST /auth/send-verification
  * Send email verification token
  */
-app.post("/auth/send-verification", async (req, res) => {
+app.post("/auth/send-verification", authLimiter, async (req, res) => {
   try {
     const { email } = req.body;
 
-    if (!email) {
+    if (!email || typeof email !== "string") {
       return res.status(400).json({ error: "Email is required" });
     }
+
+    const normalizedEmail = email.trim().toLowerCase();
 
     // Check if user exists
     const { data: authUser, error: authError } = await supabaseAdmin
       .auth.admin
-      .getUserByEmail(email);
+      .getUserByEmail(normalizedEmail);
 
     if (authError || !authUser?.user) {
       return res.status(404).json({ error: "User not found" });
@@ -213,8 +323,8 @@ app.post("/auth/send-verification", async (req, res) => {
     );
 
     // Send verification email
-    const verifyUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/email-verification?token=${rawToken}`;
-    await sendVerificationEmail(email, verifyUrl, authUser.user.email);
+    const verifyUrl = `${allowedOrigins[0]}/email-verification?token=${rawToken}`;
+    await sendVerificationEmail(normalizedEmail, verifyUrl, authUser.user.email);
 
     res.json({
       success: true,
@@ -230,11 +340,11 @@ app.post("/auth/send-verification", async (req, res) => {
  * GET /auth/verify-email
  * Verify email using token
  */
-app.get("/auth/verify-email", async (req, res) => {
+app.get("/auth/verify-email", authLimiter, async (req, res) => {
   try {
-    const { token } = req.query;
+    const token = req.query.token;
 
-    if (!token) {
+    if (!token || typeof token !== "string") {
       return res.status(400).json({ error: "Token is required" });
     }
 
@@ -291,7 +401,11 @@ app.get("/auth/verify-email", async (req, res) => {
 });
 
 // Error handling middleware
-app.use((err, req, res, next) => {
+app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (err.message === "Not allowed by CORS") {
+    res.status(403).json({ error: "Origin not allowed" });
+    return;
+  }
   console.error("[server error]", err);
   res.status(500).json({ error: "Internal server error" });
 });
@@ -300,6 +414,5 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`🚀 Backend server running on http://localhost:${PORT}`);
   console.log(`📧 Email service: Postmark`);
-  console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || "http://localhost:5173"}`);
+  console.log(`🔗 Allowed frontend origins: ${allowedOrigins.join(", ")}`);
 });
-

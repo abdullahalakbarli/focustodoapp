@@ -23,11 +23,30 @@ dist-ssr
 *.sln
 *.sw?
 
-# Android release signing
-android/app/focus-release.keystore
-android/keystore.properties
-
-# Environment variables
+# Environment variables (never commit real secrets)
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+!**/.env.example
+apps/web/.env
+services/api/.env
+
+# Android release signing
+**/keystore.properties
+**/*.keystore
+!**/keystore.properties.example
+
+# Firebase / Google (copy from .example locally)
+**/google-services.json
+!**/google-services.json.example
+
+# Supabase CLI temp files
+supabase/.temp/
+
+# OS / tooling
+Thumbs.db
+*.pem
+*.p12
+*.key
+credentials.json
+secrets.json

@@ -11,6 +11,30 @@ interface AdminContextType {
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string | undefined;
+
+async function adminApiRequest(path: string, body?: Record<string, string>) {
+  if (!API_BASE_URL) {
+    throw new Error("VITE_API_BASE_URL is not configured");
+  }
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new Error("Not authenticated");
+  }
+
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  return res.ok;
+}
+
 export const useAdmin = () => {
   const ctx = useContext(AdminContext);
   if (!ctx) throw new Error("useAdmin must be used within AdminProvider");
@@ -54,26 +78,23 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const elevateWithCode = async (code: string) => {
-    const expected = ((import.meta as any).env?.VITE_ADMIN_CODE as string | undefined) || "admin13";
-    if (code.trim() !== expected) {
+    try {
+      const ok = await adminApiRequest("/admin/elevate", { code: code.trim() });
+      if (!ok) return false;
+      setIsAdmin(true);
+      return true;
+    } catch {
       return false;
     }
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return false;
-    const { error } = await supabase
-      .from("profiles")
-      .update({ role: "admin" })
-      .eq("id", session.user.id);
-    if (error) return false;
-    setIsAdmin(true);
-    return true;
   };
 
   const revokeAdmin = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-    await supabase.from("profiles").update({ role: "user" }).eq("id", session.user.id);
-    setIsAdmin(false);
+    try {
+      const ok = await adminApiRequest("/admin/revoke");
+      if (ok) setIsAdmin(false);
+    } catch {
+      // ignore
+    }
   };
 
   return (
@@ -82,5 +103,3 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     </AdminContext.Provider>
   );
 };
-
-

@@ -48,7 +48,7 @@ focustodoapp/
    VITE_API_BASE_URL=http://localhost:4000
    ```
    
-   Backend (`services/api/.env`):
+   Backend — copy `services/api/.env.example` to `services/api/.env` (or use project root `.env`):
    ```env
    SUPABASE_URL=your-supabase-url
    SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
@@ -58,7 +58,10 @@ focustodoapp/
    FROM_NAME=Focus Studio
    FRONTEND_URL=http://localhost:5173
    PORT=4000
+   ADMIN_CODE=your-long-random-admin-code
    ```
+
+   See [SECURITY.md](./SECURITY.md) before publishing or deploying.
 
 4. **Run development servers**
    ```bash
