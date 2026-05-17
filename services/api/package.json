@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "echo 'No build step needed - using tsx for runtime'",
+    "build": "echo 'No compile step — tsx runs TypeScript at start'",
     "start": "tsx src/server.ts",
     "lint": "eslint ."
   },
@@ -18,7 +18,8 @@
     "express-rate-limit": "^8.5.2",
     "helmet": "^8.1.0",
     "pg": "^8.12.0",
-    "postmark": "^3.11.0"
+    "postmark": "^3.11.0",
+    "tsx": "^4.21.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -27,7 +28,6 @@
     "@types/node": "^22.16.5",
     "@types/pg": "^8.11.10",
     "eslint": "^9.32.0",
-    "tsx": "^4.21.0",
     "typescript": "^5.8.3"
   }
 }

@@ -51,7 +51,32 @@ CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_hash ON password_reset_toke
 CREATE INDEX IF NOT EXISTS idx_email_verification_tokens_hash ON email_verification_tokens(token_hash);
 ```
 
-## Step 3: Create .env File
+## Step 3: Configure environment on Render
+
+After removing secrets from git, **Render no longer reads a `.env` file from the repo**. Add every variable below in the Render dashboard (**Environment** tab) for the `focustodo-api` service (root directory: `services/api`).
+
+Required (the API exits on startup if any are missing):
+
+| Variable | Description |
+|----------|-------------|
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key (secret) |
+| `DATABASE_URL` | PostgreSQL connection URI |
+| `POSTMARK_API_TOKEN` | Postmark server API token |
+| `FROM_EMAIL` | Verified sender in Postmark |
+| `FRONTEND_URL` | Production web app URL (for CORS and email links) |
+
+Recommended:
+
+| Variable | Description |
+|----------|-------------|
+| `FROM_NAME` | e.g. `Focus Studio` |
+| `ADMIN_CODE` | Secret for `POST /admin/elevate` |
+| `PORT` | Usually set automatically by Render |
+
+If deploy fails with **exit code 1**, check the deploy log for `[config] Missing required environment variables`.
+
+## Step 3 (local): Create .env File
 
 **Option A: Use the setup script**
 ```bash

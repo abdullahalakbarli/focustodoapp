@@ -2,10 +2,27 @@ services:
   - type: web
     name: focustodo-api
     env: node
+    rootDir: services/api
     buildCommand: npm install
     startCommand: npm start
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
-    healthCheckPath: /health
-
+      # Set values in the Render dashboard (Environment tab). Do not commit secrets.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: POSTMARK_API_TOKEN
+        sync: false
+      - key: FROM_EMAIL
+        sync: false
+      - key: FROM_NAME
+        value: Focus Studio
+      - key: FRONTEND_URL
+        sync: false
+      - key: ADMIN_CODE
+        sync: false
